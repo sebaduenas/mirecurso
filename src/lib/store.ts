@@ -13,6 +13,10 @@ interface FormularioState {
   currentStep: number;
   completedSteps: number[];
 
+  // Hidratación
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
+
   // Acciones para actualizar datos
   setDatosPersonales: (datos: Partial<DatosPersonales>) => void;
   setDatosPropiedad: (datos: Partial<DatosPropiedad>) => void;
@@ -35,6 +39,7 @@ const initialState = {
   datosTributarios: {},
   currentStep: 1,
   completedSteps: [] as number[],
+  _hasHydrated: false,
 };
 
 function calcularEdad(fechaNacimiento: string): number {
@@ -52,6 +57,9 @@ export const useFormularioStore = create<FormularioState>()(
   persist(
     (set, get) => ({
       ...initialState,
+
+      // Hidratación
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       // Setters de datos
       setDatosPersonales: (datos) =>
@@ -78,7 +86,13 @@ export const useFormularioStore = create<FormularioState>()(
         })),
 
       // Reset
-      resetFormulario: () => set(initialState),
+      resetFormulario: () => set({
+        datosPersonales: {},
+        datosPropiedad: {},
+        datosTributarios: {},
+        currentStep: 1,
+        completedSteps: [],
+      }),
 
       // Obtener formulario completo para generar PDF
       getFormularioCompleto: () => {
@@ -140,6 +154,9 @@ export const useFormularioStore = create<FormularioState>()(
         currentStep: state.currentStep,
         completedSteps: state.completedSteps,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
