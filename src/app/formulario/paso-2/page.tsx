@@ -104,10 +104,17 @@ export default function Paso2Page() {
 
   const handleMismaDireccion = (checked: boolean) => {
     setValue('mismoQueDomicilio', checked);
-    if (checked && datosPersonales.domicilio) {
-      setValue('direccionPropiedad', datosPersonales.domicilio);
-      setValue('regionPropiedad', datosPersonales.region || '');
-      setValue('comunaPropiedad', datosPersonales.comuna || '');
+    if (checked) {
+      // Get the latest data directly from the store
+      const { datosPersonales: datos } = useFormularioStore.getState();
+      if (datos.domicilio) {
+        setValue('direccionPropiedad', datos.domicilio);
+        setValue('regionPropiedad', datos.region || '');
+        // Set comuna after a small delay to ensure the region is processed first
+        setTimeout(() => {
+          setValue('comunaPropiedad', datos.comuna || '');
+        }, 0);
+      }
     }
   };
 

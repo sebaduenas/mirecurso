@@ -93,24 +93,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     fontSize: 11,
   },
-  disclaimer: {
-    marginTop: 60,
-    padding: 12,
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#F59E0B',
-  },
-  disclaimerTitle: {
-    fontFamily: 'Times-Bold',
-    fontSize: 10,
-    marginBottom: 6,
-    color: '#92400E',
-  },
-  disclaimerText: {
-    fontSize: 9,
-    color: '#78350F',
-    lineHeight: 1.4,
-  },
   bold: {
     fontFamily: 'Times-Bold',
   },
@@ -352,14 +334,6 @@ export function RecursoDocument({ datos }: RecursoDocumentProps) {
         <Text style={styles.footer}>
           En {datosPropiedad.comunaPropiedad}, a {formatearFechaLegal(datosRecurso.fechaGeneracion)}
         </Text>
-
-        {/* DISCLAIMER LEGAL */}
-        <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerTitle}>AVISO LEGAL - MIRECURSO.CL</Text>
-          <Text style={styles.disclaimerText}>
-            Este documento fue generado automáticamente por mirecurso.cl basándose en el precedente judicial establecido en la causa Rol N° 20732-2024 de la Corte de Apelaciones de Santiago (caso Marina Latorre). No constituye asesoría legal profesional. Cada caso es evaluado individualmente por los tribunales. El usuario es responsable de verificar la exactitud de los datos ingresados y de la presentación del recurso ante la autoridad competente.
-          </Text>
-        </View>
       </Page>
     </Document>
   );
