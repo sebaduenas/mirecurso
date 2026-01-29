@@ -37,7 +37,7 @@ const SUB_PASOS = [
 const paso1Schema = z.object({
   nombreCompleto: z
     .string()
-    .min(5, 'El nombre debe tener al menos 5 caracteres')
+    .min(1, 'Ingrese su nombre completo')
     .max(100, 'El nombre es demasiado largo'),
   rut: z
     .string()
