@@ -87,7 +87,7 @@ export default function HomePage() {
         </section>
 
         {/* Cómo funciona - Modern cards */}
-        <section className="py-20 bg-white">
+        <section id="como-funciona" className="py-20 bg-white scroll-mt-20">
           <div className="mx-auto max-w-5xl px-4">
             <div className="text-center mb-16">
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
@@ -233,7 +233,7 @@ export default function HomePage() {
         </section>
 
         {/* FAQ resumido - Modern accordion style */}
-        <section className="py-20 bg-gradient-to-b from-slate-50 to-white">
+        <section id="preguntas" className="py-20 bg-gradient-to-b from-slate-50 to-white scroll-mt-20">
           <div className="mx-auto max-w-4xl px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
