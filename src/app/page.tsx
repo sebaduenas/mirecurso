@@ -23,7 +23,7 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero Section - Modern gradient with floating elements */}
-        <section className="relative overflow-hidden gradient-hero py-20 sm:py-28">
+        <section className="relative overflow-hidden gradient-hero py-12 sm:py-16">
           {/* Decorative elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
@@ -32,26 +32,26 @@ export default function HomePage() {
 
           <div className="relative mx-auto max-w-4xl px-4 text-center">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 mb-8 shadow-soft">
+            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 mb-4 shadow-soft">
               <Sparkles className="w-4 h-4 text-primary" />
               <span className="text-base font-medium text-primary">
                 100% gratuito y sin abogado
               </span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight text-balance">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight text-balance">
               Reclame la exención de{" "}
               <span className="text-primary">contribuciones</span>{" "}
               que le corresponde
             </h1>
 
-            <p className="mt-6 text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="mt-4 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Si tiene más de 60 años y paga contribuciones desproporcionadas,
               generamos su recurso de protección en minutos.
             </p>
 
             {/* Features badges */}
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               {[
                 { icon: Shield, text: "Datos seguros" },
                 { icon: Clock, text: "Solo 5 minutos" },
@@ -68,18 +68,18 @@ export default function HomePage() {
             </div>
 
             {/* CTA Button */}
-            <div className="mt-12">
+            <div className="mt-8">
               <Button
                 asChild
                 size="lg"
-                className="h-16 px-10 text-xl gradient-primary shadow-glow hover:shadow-lg hover:scale-[1.02] transition-all"
+                className="h-14 px-8 text-lg gradient-primary shadow-glow hover:shadow-lg hover:scale-[1.02] transition-all"
               >
                 <Link href="/formulario">
                   Comenzar mi recurso
-                  <ArrowRight className="ml-3 w-6 h-6" />
+                  <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
-              <p className="mt-4 text-base text-muted-foreground">
+              <p className="mt-3 text-base text-muted-foreground">
                 Sin registro ni tarjeta de crédito
               </p>
             </div>

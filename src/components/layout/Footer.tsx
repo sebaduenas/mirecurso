@@ -44,7 +44,14 @@ export function Footer() {
           <div className="text-center">
             <p className="text-base text-muted-foreground">
               Desarrollado por{' '}
-              <span className="font-medium text-foreground">Inteligencia Digital</span>
+              <a
+                href="https://www.inteligencia-digital.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-foreground hover:text-primary transition-colors"
+              >
+                Inteligencia Digital
+              </a>
             </p>
             <p className="text-base text-muted-foreground mt-1">
               © {new Date().getFullYear()} mirecurso.cl
