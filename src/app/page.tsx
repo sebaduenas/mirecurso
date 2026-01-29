@@ -79,9 +79,6 @@ export default function HomePage() {
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
-              <p className="mt-3 text-base text-muted-foreground">
-                Sin registro ni tarjeta de crédito
-              </p>
             </div>
           </div>
         </section>
