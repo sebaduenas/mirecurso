@@ -2,325 +2,293 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import dynamic from 'next/dynamic';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useFormularioStore } from '@/lib/store';
-import { getCorteByRegion } from '@/data/cortes-apelaciones';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Download,
-  FileText,
-  Printer,
-  PenTool,
-  FolderOpen,
-  Building2,
-  Archive,
-  HelpCircle,
-  RefreshCw,
-  CheckCircle2,
-  Loader2,
-  AlertTriangle,
-  MapPin,
-  Clock,
-  FileCheck,
-} from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { FieldWithHelp } from '@/components/formulario/FieldWithHelp';
+import { ArrowLeft, ArrowRight, Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { TEXTOS_AYUDA, diasDesde, dentroDelPlazo30Dias } from '@/data/datos-fijos';
 
-// Importar dinámicamente para evitar SSR issues con @react-pdf/renderer
-const PDFDownloadButton = dynamic(
-  () => import('@/components/pdf/PDFDownloadButton').then((mod) => mod.PDFDownloadButton),
-  {
-    ssr: false,
-    loading: () => (
-      <Button disabled className="h-16 px-8 text-lg min-w-[280px]">
-        <Loader2 className="w-6 h-6 mr-3 animate-spin" />
-        Preparando documento...
-      </Button>
-    ),
-  }
-);
+const paso5Schema = z.object({
+  presentoSolicitudSII: z.boolean(),
+  fechaSolicitud: z.string().optional(),
+  recibioDenegatoria: z.boolean(),
+  numeroResolucion: z.string().optional(),
+  fechaResolucion: z.string().optional(),
+});
+
+type Paso5Form = z.infer<typeof paso5Schema>;
 
 export default function Paso5Page() {
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
   const {
+    procedimientoPrevio,
+    setProcedimientoPrevio,
     setCurrentStep,
+    markStepComplete,
     isStepAccessible,
-    getFormularioCompleto,
-    resetFormulario,
   } = useFormularioStore();
 
-  const formulario = getFormularioCompleto();
-  const corte = formulario
-    ? getCorteByRegion(formulario.datosPropiedad.regionPropiedad)
-    : null;
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<Paso5Form>({
+    resolver: zodResolver(paso5Schema),
+    defaultValues: {
+      presentoSolicitudSII: procedimientoPrevio.presentoSolicitudSII ?? false,
+      fechaSolicitud: procedimientoPrevio.fechaSolicitud ?? '',
+      recibioDenegatoria: procedimientoPrevio.recibioDenegatoria ?? false,
+      numeroResolucion: procedimientoPrevio.numeroResolucion ?? '',
+      fechaResolucion: procedimientoPrevio.fechaResolucion ?? '',
+    },
+    mode: 'onBlur',
+  });
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const watchedValues = watch();
+  const presentoSolicitud = watchedValues.presentoSolicitudSII;
+  const recibioDenegatoria = watchedValues.recibioDenegatoria;
+
+  // Verificar si está dentro del plazo de 30 días
+  const estaDentroDelPlazo = watchedValues.fechaResolucion
+    ? dentroDelPlazo30Dias(watchedValues.fechaResolucion)
+    : true;
+
+  const diasDesdeDenegatoria = watchedValues.fechaResolucion
+    ? diasDesde(watchedValues.fechaResolucion)
+    : 0;
 
   useEffect(() => {
     if (!isStepAccessible(5)) {
-      router.replace('/formulario/paso-1');
+      router.replace('/formulario/paso-4');
       return;
     }
     setCurrentStep(5);
-  }, [isStepAccessible, router, setCurrentStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleNuevoRecurso = () => {
-    if (confirm('¿Está seguro de que desea iniciar un nuevo recurso? Se borrarán todos los datos actuales.')) {
-      resetFormulario();
-      router.push('/formulario/paso-1');
-    }
+  const onSubmit = (data: Paso5Form) => {
+    setProcedimientoPrevio(data);
+    markStepComplete(5);
+    router.push('/formulario/paso-6');
   };
 
-  if (!formulario || !isClient) {
-    return (
-      <div className="text-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-        <p className="text-lg text-muted-foreground">Preparando su documento...</p>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      {/* Encabezado de éxito */}
-      <div className="text-center mb-8">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle2 className="w-12 h-12 text-green-600" />
+    <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between text-base text-muted-foreground mb-2">
+          <span>Paso 5 de 7: Procedimiento previo</span>
         </div>
-        <h1 className="text-3xl font-bold mb-3">¡Su recurso está listo!</h1>
-        <p className="text-lg text-muted-foreground">
-          Descargue el documento PDF y siga las instrucciones para presentarlo
-        </p>
       </div>
 
-      {/* Botón de descarga principal */}
-      <Card className="mb-6 border-2 border-primary">
-        <CardContent className="py-8">
-          <div className="flex flex-col items-center text-center">
-            {/* Preview visual del PDF */}
-            <div className="w-28 h-36 bg-white border-2 border-border rounded-lg mb-6 flex flex-col items-center justify-center shadow-md">
-              <FileText className="w-10 h-10 text-red-600 mb-1" />
-              <p className="text-[10px] text-muted-foreground font-medium">PDF</p>
-              <p className="text-[9px] text-foreground mt-1 px-2 text-center leading-tight">
-                Recurso de Protección
-              </p>
-            </div>
-
-            <p className="text-lg text-muted-foreground mb-6 max-w-md">
-              Documento listo para imprimir y presentar en la {corte?.nombre}
-            </p>
-
-            <PDFDownloadButton
-              datos={formulario}
-              filename={`recurso-proteccion-${formulario.datosPersonales.rut.replace(/\./g, '')}.pdf`}
-            />
-
-            <p className="text-base text-muted-foreground mt-4">
-              El archivo se guardará en su carpeta de descargas
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Alerta importante */}
-      <Alert className="mb-6 bg-amber-50 border-amber-200">
-        <AlertTriangle className="h-5 w-5 text-amber-600" />
-        <AlertDescription className="text-base text-amber-800">
-          <strong>Importante:</strong> El recurso de protección debe presentarse dentro de 30 días
-          desde que ocurrió el acto que afecta sus derechos. No demore en presentarlo.
-        </AlertDescription>
-      </Alert>
-
-      {/* Pasos siguientes */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <FileCheck className="w-6 h-6 text-primary" />
-            Pasos para presentar su recurso
-          </CardTitle>
+          <CardTitle className="text-2xl">Solicitud previa al SII</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-0">
-          {/* Paso 1 */}
-          <div className="flex gap-4 py-5 border-b">
-            <div className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center flex-shrink-0 text-xl font-bold">
-              1
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Printer className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Imprima el documento</h3>
+        <CardContent className="space-y-6">
+          <p className="text-lg text-muted-foreground mb-4">
+            Indique si ya presentó una solicitud de beneficio ante el SII
+          </p>
+
+          <div className="space-y-4">
+            <Label className="text-lg font-medium">
+              ¿Presentó una solicitud de beneficio al SII?
+            </Label>
+            <RadioGroup
+              value={presentoSolicitud ? 'si' : 'no'}
+              onValueChange={(value) => setValue('presentoSolicitudSII', value === 'si')}
+              className="flex flex-col gap-3"
+            >
+              <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer">
+                <RadioGroupItem value="si" id="solicitud-si" className="w-5 h-5" />
+                <Label htmlFor="solicitud-si" className="cursor-pointer text-lg flex-1">
+                  Sí, presenté una solicitud
+                </Label>
               </div>
-              <p className="text-base text-muted-foreground">
-                Imprima <strong>2 copias</strong> del recurso: una para entregar en la Corte
-                y otra para que le devuelvan con el timbre de recepción.
-              </p>
-            </div>
+              <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer">
+                <RadioGroupItem value="no" id="solicitud-no" className="w-5 h-5" />
+                <Label htmlFor="solicitud-no" className="cursor-pointer text-lg flex-1">
+                  No, no he presentado solicitud
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
 
-          {/* Paso 2 */}
-          <div className="flex gap-4 py-5 border-b">
-            <div className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center flex-shrink-0 text-xl font-bold">
-              2
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <PenTool className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Firme el documento</h3>
-              </div>
-              <p className="text-base text-muted-foreground">
-                Busque la línea de firma al final del documento y firme con su nombre completo.
-                <strong> Firme las dos copias.</strong>
-              </p>
-            </div>
-          </div>
+          {presentoSolicitud && (
+            <FieldWithHelp
+              label="Fecha aproximada de la solicitud"
+              htmlFor="fechaSolicitud"
+              error={errors.fechaSolicitud?.message}
+            >
+              <Input
+                id="fechaSolicitud"
+                type="date"
+                {...register('fechaSolicitud')}
+                className="h-14 text-lg"
+              />
+            </FieldWithHelp>
+          )}
 
-          {/* Paso 3 */}
-          <div className="flex gap-4 py-5 border-b">
-            <div className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center flex-shrink-0 text-xl font-bold">
-              3
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <FolderOpen className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Reúna los documentos de respaldo</h3>
-              </div>
-              <div className="text-base text-muted-foreground">
-                <p className="mb-2">Adjunte copias de los siguientes documentos:</p>
-                <ul className="space-y-2 ml-1">
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">✓</span>
-                    <span>Cédula de identidad (por ambos lados)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">✓</span>
-                    <span>Certificado de avalúo fiscal (descárguelo en <a href="https://www.sii.cl" target="_blank" rel="noopener noreferrer" className="text-primary underline">sii.cl</a>)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">✓</span>
-                    <span>Última boleta de contribuciones</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">✓</span>
-                    <span>Liquidación de pensión o comprobante de ingresos</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Paso 4 */}
-          <div className="flex gap-4 py-5 border-b">
-            <div className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center flex-shrink-0 text-xl font-bold">
-              4
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Building2 className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Presente en la Corte de Apelaciones</h3>
-              </div>
-              {corte && (
-                <div className="bg-muted rounded-xl p-4 mt-3">
-                  <p className="text-lg font-semibold text-foreground mb-2">
-                    {corte.nombre}
-                  </p>
-                  <div className="space-y-2 text-base">
-                    <p className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      {corte.direccion}, {corte.ciudad}
-                    </p>
-                    <p className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="w-4 h-4 flex-shrink-0" />
-                      Horario de atención: Lunes a Viernes, 8:00 a 14:00 hrs
-                    </p>
-                  </div>
-                  <p className="text-base text-muted-foreground mt-3 italic">
-                    Diríjase a la oficina de partes o mesón de ingreso de causas
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Paso 5 */}
-          <div className="flex gap-4 py-5">
-            <div className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center flex-shrink-0 text-xl font-bold">
-              5
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Archive className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Guarde su copia timbrada</h3>
-              </div>
-              <p className="text-base text-muted-foreground">
-                La Corte le devolverá una copia con el timbre de recepción y un número de ingreso.
-                <strong> Guárdela como comprobante</strong>, ya que con ese número podrá consultar
-                el estado de su recurso.
-              </p>
-            </div>
-          </div>
+          {!presentoSolicitud && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <Info className="h-5 w-5 text-blue-600" />
+              <AlertDescription className="text-base text-blue-800">
+                No es obligatorio haber presentado una solicitud previa al SII para interponer el
+                recurso de protección. Puede presentar el recurso directamente.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
-      {/* Información adicional */}
-      <Card className="mb-6 bg-blue-50 border-blue-200">
+      {presentoSolicitud && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-2xl">Resolución del SII</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-lg text-muted-foreground mb-4">
+              Indique si recibió una resolución denegatoria del SII
+            </p>
+
+            <div className="space-y-4">
+              <Label className="text-lg font-medium">
+                ¿Recibió una resolución denegatoria?
+              </Label>
+              <RadioGroup
+                value={recibioDenegatoria ? 'si' : 'no'}
+                onValueChange={(value) => setValue('recibioDenegatoria', value === 'si')}
+                className="flex flex-col gap-3"
+              >
+                <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer">
+                  <RadioGroupItem value="si" id="denegatoria-si" className="w-5 h-5" />
+                  <Label htmlFor="denegatoria-si" className="cursor-pointer text-lg flex-1">
+                    Sí, mi solicitud fue rechazada
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-4 border-2 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer">
+                  <RadioGroupItem value="no" id="denegatoria-no" className="w-5 h-5" />
+                  <Label htmlFor="denegatoria-no" className="cursor-pointer text-lg flex-1">
+                    No, aún no recibo respuesta
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {recibioDenegatoria && (
+              <>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <FieldWithHelp
+                    label="Número de resolución"
+                    htmlFor="numeroResolucion"
+                    error={errors.numeroResolucion?.message}
+                    example="Ej: RES. EX. 123"
+                  >
+                    <Input
+                      id="numeroResolucion"
+                      {...register('numeroResolucion')}
+                      placeholder="Número de la resolución"
+                      className="h-14 text-lg"
+                    />
+                  </FieldWithHelp>
+
+                  <FieldWithHelp
+                    label="Fecha de la resolución"
+                    htmlFor="fechaResolucion"
+                    error={errors.fechaResolucion?.message}
+                  >
+                    <Input
+                      id="fechaResolucion"
+                      type="date"
+                      {...register('fechaResolucion')}
+                      className="h-14 text-lg"
+                    />
+                  </FieldWithHelp>
+                </div>
+
+                {watchedValues.fechaResolucion && (
+                  <>
+                    {estaDentroDelPlazo ? (
+                      <Alert className="bg-green-50 border-green-200">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <AlertDescription className="text-base text-green-800">
+                          <strong>Dentro del plazo.</strong> Han transcurrido {diasDesdeDenegatoria} días
+                          desde la resolución. El recurso de protección debe presentarse dentro de 30 días.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <Alert className="bg-amber-50 border-amber-200">
+                        <AlertTriangle className="h-5 w-5 text-amber-600" />
+                        <AlertDescription className="text-base text-amber-800">
+                          <strong>Atención:</strong> Han transcurrido {diasDesdeDenegatoria} días desde la
+                          resolución (más de 30 días). Sin embargo, el recurso puede aún ser procedente si
+                          el agravio es permanente (el cobro de contribuciones continúa).
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+
+            {!recibioDenegatoria && (
+              <Alert>
+                <Info className="h-5 w-5" />
+                <AlertDescription className="text-base">
+                  Si aún no ha recibido respuesta del SII, puede presentar el recurso de protección
+                  igualmente, especialmente si ha transcurrido un tiempo razonable desde su solicitud.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Información sobre el plazo */}
+      <Card className="mb-6 bg-muted/30">
         <CardContent className="py-6">
           <div className="flex items-start gap-4">
-            <HelpCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+            <Info className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-2">¿Qué pasa después?</h3>
-              <ul className="space-y-2 text-base text-blue-700">
-                <li>• La Corte revisará su recurso y pedirá un informe al SII</li>
-                <li>• El SII tiene plazo para responder (generalmente 8 días)</li>
-                <li>• La Corte dictará sentencia, que puede tardar algunas semanas</li>
-                <li>• Si la Corte acoge su recurso, el SII deberá otorgarle el beneficio</li>
-              </ul>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Sobre el plazo del recurso</h3>
+              <p className="text-base text-muted-foreground">
+                {TEXTOS_AYUDA.plazo30Dias}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Ayuda */}
-      <Card className="mb-6">
-        <CardContent className="py-6">
-          <div className="flex items-center gap-3 mb-4">
-            <HelpCircle className="w-6 h-6 text-primary" />
-            <h3 className="text-lg font-semibold">¿Tiene dudas?</h3>
-          </div>
-          <p className="text-base text-muted-foreground mb-4">
-            Consulte nuestras preguntas frecuentes para resolver sus inquietudes sobre el proceso.
-          </p>
-          <Button asChild variant="outline" className="h-12 text-lg">
-            <Link href="/preguntas">
-              Ver preguntas frecuentes
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Acciones adicionales */}
-      <div className="flex flex-col sm:flex-row gap-4 pt-4">
+      {/* Navegación */}
+      <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between pt-6">
         <Button
+          type="button"
           variant="outline"
-          onClick={handleNuevoRecurso}
-          className="h-14 px-6 text-lg flex-1"
+          onClick={() => router.push('/formulario/paso-4')}
+          className="h-14 px-6 text-lg min-w-[140px]"
         >
-          <RefreshCw className="w-5 h-5 mr-2" />
-          Generar otro recurso
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Anterior
         </Button>
+
         <Button
-          asChild
-          variant="outline"
-          className="h-14 px-6 text-lg flex-1"
+          type="submit"
+          className="h-14 px-8 text-lg min-w-[160px]"
         >
-          <Link href="/">
-            Volver al inicio
-          </Link>
+          Siguiente paso
+          <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

@@ -22,13 +22,19 @@ export function SessionRecoveryDialog() {
     nombreCompleto?: string;
   } | null>(null);
 
-  const { resetFormulario, currentStep } = useFormularioStore();
+  const resetFormulario = useFormularioStore((state) => state.resetFormulario);
 
   useEffect(() => {
     // Check localStorage for existing data (only on client)
     if (typeof window === 'undefined') return;
 
-    const stored = localStorage.getItem('mirecurso-formulario-v1');
+    // Clean up old v1 data if exists
+    const oldStored = localStorage.getItem('mirecurso-formulario-v1');
+    if (oldStored) {
+      localStorage.removeItem('mirecurso-formulario-v1');
+    }
+
+    const stored = localStorage.getItem('mirecurso-formulario-v2');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -48,7 +54,8 @@ export function SessionRecoveryDialog() {
           setShowDialog(true);
         }
       } catch {
-        // Invalid data, ignore
+        // Invalid data, clear it
+        localStorage.removeItem('mirecurso-formulario-v2');
       }
     }
   }, []);

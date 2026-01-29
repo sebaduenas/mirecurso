@@ -9,41 +9,49 @@ import { useFormularioStore } from '@/lib/store';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { FieldWithHelp } from '@/components/formulario/FieldWithHelp';
 import { CurrencyInput } from '@/components/formulario/CurrencyInput';
 import { RegionComunaSelect } from '@/components/formulario/RegionComunaSelect';
-import { VoiceInput } from '@/components/formulario/VoiceInput';
 import { ArrowLeft, ArrowRight, Info } from 'lucide-react';
+import { TIPOS_PROPIETARIO, TEXTOS_AYUDA } from '@/data/datos-fijos';
 
 // Sub-pasos del paso 2
 const SUB_PASOS = [
-  { id: 1, title: 'Ubicación de la propiedad', fields: ['mismaDireccion', 'direccionPropiedad', 'regionPropiedad', 'comunaPropiedad'] },
-  { id: 2, title: 'Uso de la propiedad', fields: ['destinoPropiedad'] },
-  { id: 3, title: 'Datos del SII', fields: ['rolSII', 'avaluoFiscal'] },
-  { id: 4, title: 'Tipo de propiedad', fields: ['esPropietarioUnico', 'porcentajeDominio'] },
+  { id: 1, title: 'Ubicación de la propiedad', fields: ['direccionPropiedad', 'regionPropiedad', 'comunaPropiedad'] },
+  { id: 2, title: 'Datos del SII', fields: ['rolAvaluo', 'avaluoFiscalVigente'] },
+  { id: 3, title: 'Tipo de propiedad', fields: ['tipoPropietario', 'destinoHabitacional'] },
 ];
 
 const paso2Schema = z.object({
+  mismoQueDomicilio: z.boolean(),
   direccionPropiedad: z
     .string()
     .min(10, 'Ingrese la dirección completa de la propiedad')
     .max(200, 'La dirección es demasiado larga'),
   regionPropiedad: z.string().min(1, 'Seleccione la región de la propiedad'),
   comunaPropiedad: z.string().min(1, 'Seleccione la comuna de la propiedad'),
-  rolSII: z
+  rolAvaluo: z
     .string()
-    .regex(/^\d{1,5}-\d{1,4}$/, 'El formato debe ser: 123-456'),
-  avaluoFiscal: z
-    .number({ error: 'Ingrese el avalúo fiscal' })
-    .min(1, 'Ingrese el avalúo fiscal'),
-  destinoPropiedad: z.enum(['habitacional', 'otro']),
-  esPropietarioUnico: z.boolean(),
-  porcentajeDominio: z.number().min(1).max(100).optional(),
-  mismaDireccion: z.boolean().optional(),
+    .min(1, 'Ingrese el rol de avalúo')
+    .regex(/^\d{1,5}-\d{1,5}$/, 'El formato debe ser: XXXXX-XXXXX (ej: 00372-00010)'),
+  avaluoFiscalVigente: z
+    .number({ message: 'Ingrese el avalúo fiscal' })
+    .min(1000000, 'El avalúo fiscal parece muy bajo'),
+  tipoPropietario: z.enum(['unico', 'con_conyuge', 'con_hijos', 'otro'], {
+    message: 'Seleccione el tipo de propiedad',
+  }),
+  destinoHabitacional: z.boolean(),
+  conoceInscripcion: z.boolean(),
 });
 
 type Paso2Form = z.infer<typeof paso2Schema>;
@@ -70,15 +78,15 @@ export default function Paso2Page() {
   } = useForm<Paso2Form>({
     resolver: zodResolver(paso2Schema),
     defaultValues: {
+      mismoQueDomicilio: datosPropiedad.mismoQueDomicilio ?? false,
       direccionPropiedad: datosPropiedad.direccionPropiedad ?? '',
       regionPropiedad: datosPropiedad.regionPropiedad ?? '',
       comunaPropiedad: datosPropiedad.comunaPropiedad ?? '',
-      rolSII: datosPropiedad.rolSII ?? '',
-      avaluoFiscal: datosPropiedad.avaluoFiscal ?? undefined,
-      destinoPropiedad: datosPropiedad.destinoPropiedad ?? 'habitacional',
-      esPropietarioUnico: datosPropiedad.esPropietarioUnico ?? true,
-      porcentajeDominio: datosPropiedad.porcentajeDominio ?? 100,
-      mismaDireccion: false,
+      rolAvaluo: datosPropiedad.rolAvaluo ?? '',
+      avaluoFiscalVigente: datosPropiedad.avaluoFiscalVigente ?? undefined,
+      tipoPropietario: datosPropiedad.tipoPropietario ?? undefined,
+      destinoHabitacional: datosPropiedad.destinoHabitacional ?? true,
+      conoceInscripcion: datosPropiedad.conoceInscripcion ?? false,
     },
     mode: 'onBlur',
   });
@@ -91,14 +99,11 @@ export default function Paso2Page() {
       return;
     }
     setCurrentStep(2);
-  }, [isStepAccessible, router, setCurrentStep]);
-
-  useEffect(() => {
-    setDatosPropiedad(watchedValues);
-  }, [watchedValues, setDatosPropiedad]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleMismaDireccion = (checked: boolean) => {
-    setValue('mismaDireccion', checked);
+    setValue('mismoQueDomicilio', checked);
     if (checked && datosPersonales.domicilio) {
       setValue('direccionPropiedad', datosPersonales.domicilio);
       setValue('regionPropiedad', datosPersonales.region || '');
@@ -106,22 +111,15 @@ export default function Paso2Page() {
     }
   };
 
-  // Validar campos del sub-paso actual
   const validateCurrentSubPaso = async (): Promise<boolean> => {
     if (subPaso === 1) {
       return await trigger(['direccionPropiedad', 'regionPropiedad', 'comunaPropiedad']);
     }
     if (subPaso === 2) {
-      return await trigger(['destinoPropiedad']);
+      return await trigger(['rolAvaluo', 'avaluoFiscalVigente']);
     }
     if (subPaso === 3) {
-      return await trigger(['rolSII', 'avaluoFiscal']);
-    }
-    if (subPaso === 4) {
-      if (!watchedValues.esPropietarioUnico) {
-        return await trigger(['esPropietarioUnico', 'porcentajeDominio']);
-      }
-      return true;
+      return await trigger(['tipoPropietario']);
     }
     return true;
   };
@@ -163,7 +161,7 @@ export default function Paso2Page() {
       {/* Indicador de sub-paso */}
       <div className="mb-6">
         <div className="flex items-center justify-between text-base text-muted-foreground mb-2">
-          <span>Paso 2 de 5: Datos de la propiedad</span>
+          <span>Paso 2 de 7: Datos de la propiedad</span>
           <span>{subPaso} de {SUB_PASOS.length}</span>
         </div>
         <div className="flex gap-1">
@@ -190,15 +188,14 @@ export default function Paso2Page() {
                 Ingrese la dirección de la propiedad afecta a contribuciones
               </p>
 
-              {/* Checkbox misma dirección */}
               <div className="flex items-center space-x-4 p-5 border-2 rounded-xl bg-muted/30">
                 <Checkbox
-                  id="mismaDireccion"
-                  checked={watchedValues.mismaDireccion}
+                  id="mismoQueDomicilio"
+                  checked={watchedValues.mismoQueDomicilio}
                   onCheckedChange={handleMismaDireccion}
                   className="w-6 h-6"
                 />
-                <Label htmlFor="mismaDireccion" className="cursor-pointer text-lg">
+                <Label htmlFor="mismoQueDomicilio" className="cursor-pointer text-lg">
                   Es la misma dirección donde vivo
                 </Label>
               </div>
@@ -210,18 +207,12 @@ export default function Paso2Page() {
                 example="Av. Providencia 1234, depto 56"
                 required
               >
-                <div className="flex gap-2">
-                  <Input
-                    id="direccionPropiedad"
-                    {...register('direccionPropiedad')}
-                    placeholder="Calle, número, depto/casa"
-                    className="h-14 text-lg flex-1"
-                  />
-                  <VoiceInput
-                    onResult={(text) => setValue('direccionPropiedad', text)}
-                    buttonLabel="Dictar"
-                  />
-                </div>
+                <Input
+                  id="direccionPropiedad"
+                  {...register('direccionPropiedad')}
+                  placeholder="Calle, número, depto/casa"
+                  className="h-14 text-lg"
+                />
               </FieldWithHelp>
 
               <div className="space-y-2">
@@ -245,88 +236,42 @@ export default function Paso2Page() {
             </>
           )}
 
-          {/* Sub-paso 2: Uso de la propiedad */}
+          {/* Sub-paso 2: Datos del SII */}
           {subPaso === 2 && (
             <>
               <p className="text-lg text-muted-foreground mb-4">
-                Indique el uso que le da a la propiedad
-              </p>
-
-              <RadioGroup
-                value={watchedValues.destinoPropiedad}
-                onValueChange={(value) => setValue('destinoPropiedad', value as 'habitacional' | 'otro')}
-              >
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="habitacional" id="habitacional" className="w-6 h-6" />
-                  <div className="flex-1">
-                    <Label htmlFor="habitacional" className="cursor-pointer text-lg font-medium">
-                      Habitacional (vivienda)
-                    </Label>
-                    <p className="text-base text-muted-foreground">
-                      La propiedad es su hogar o residencia principal
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="otro" id="otro" className="w-6 h-6" />
-                  <div className="flex-1">
-                    <Label htmlFor="otro" className="cursor-pointer text-lg font-medium">
-                      Otro uso
-                    </Label>
-                    <p className="text-base text-muted-foreground">
-                      Comercial, bodega, terreno, etc.
-                    </p>
-                  </div>
-                </div>
-              </RadioGroup>
-
-              {watchedValues.destinoPropiedad === 'otro' && (
-                <Alert className="bg-amber-50 border-amber-200">
-                  <Info className="h-5 w-5 text-amber-600" />
-                  <AlertDescription className="text-base text-amber-800">
-                    El recurso de protección tiene mejores resultados para propiedades de uso habitacional.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </>
-          )}
-
-          {/* Sub-paso 3: Datos del SII */}
-          {subPaso === 3 && (
-            <>
-              <p className="text-lg text-muted-foreground mb-4">
-                Esta información aparece en su boleta de contribuciones
+                Esta información aparece en su boleta de contribuciones o en sii.cl
               </p>
 
               <FieldWithHelp
-                label="Rol del SII"
-                htmlFor="rolSII"
-                error={errors.rolSII?.message}
-                helpText="Lo encuentra en la parte superior de su boleta de contribuciones"
-                example="123-456"
+                label="Rol de avalúo"
+                htmlFor="rolAvaluo"
+                error={errors.rolAvaluo?.message}
+                helpText={TEXTOS_AYUDA.rolAvaluo}
+                example="00372-00010"
                 required
               >
                 <Input
-                  id="rolSII"
-                  {...register('rolSII')}
-                  placeholder="Ingrese el rol (ej: 123-456)"
+                  id="rolAvaluo"
+                  {...register('rolAvaluo')}
+                  placeholder="Ingrese el rol (ej: 00372-00010)"
                   className="h-14 text-lg"
                   autoFocus
                 />
               </FieldWithHelp>
 
               <FieldWithHelp
-                label="Avalúo fiscal (en pesos)"
-                htmlFor="avaluoFiscal"
-                error={errors.avaluoFiscal?.message}
-                helpText="Este valor aparece en su certificado de avalúo fiscal del SII"
+                label="Avalúo fiscal vigente (en pesos)"
+                htmlFor="avaluoFiscalVigente"
+                error={errors.avaluoFiscalVigente?.message}
+                helpText={TEXTOS_AYUDA.avaluoFiscal}
                 required
               >
                 <CurrencyInput
-                  id="avaluoFiscal"
-                  value={watchedValues.avaluoFiscal}
-                  onChange={(value) => setValue('avaluoFiscal', value as number)}
-                  error={errors.avaluoFiscal?.message}
+                  id="avaluoFiscalVigente"
+                  value={watchedValues.avaluoFiscalVigente}
+                  onChange={(value) => setValue('avaluoFiscalVigente', value as number)}
+                  error={errors.avaluoFiscalVigente?.message}
                   placeholder="180.000.000"
                 />
               </FieldWithHelp>
@@ -349,67 +294,62 @@ export default function Paso2Page() {
             </>
           )}
 
-          {/* Sub-paso 4: Tipo de propiedad */}
-          {subPaso === 4 && (
+          {/* Sub-paso 3: Tipo de propiedad */}
+          {subPaso === 3 && (
             <>
               <p className="text-lg text-muted-foreground mb-4">
-                Indique si es el único dueño de la propiedad
+                Indique cómo es la propiedad de este inmueble
               </p>
 
-              <RadioGroup
-                value={watchedValues.esPropietarioUnico ? 'si' : 'no'}
-                onValueChange={(value) => {
-                  setValue('esPropietarioUnico', value === 'si');
-                  if (value === 'si') {
-                    setValue('porcentajeDominio', 100);
-                  }
-                }}
-              >
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="si" id="propietario-si" className="w-6 h-6" />
-                  <div className="flex-1">
-                    <Label htmlFor="propietario-si" className="cursor-pointer text-lg font-medium">
-                      Sí, soy el único propietario
-                    </Label>
-                    <p className="text-base text-muted-foreground">
-                      El 100% de la propiedad está a mi nombre
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="no" id="propietario-no" className="w-6 h-6" />
-                  <div className="flex-1">
-                    <Label htmlFor="propietario-no" className="cursor-pointer text-lg font-medium">
-                      No, comparto la propiedad
-                    </Label>
-                    <p className="text-base text-muted-foreground">
-                      Hay otros copropietarios (herederos, cónyuge, etc.)
-                    </p>
-                  </div>
-                </div>
-              </RadioGroup>
-
-              {/* Porcentaje de dominio (solo si no es único propietario) */}
-              {!watchedValues.esPropietarioUnico && (
-                <FieldWithHelp
-                  label="Porcentaje de dominio"
-                  htmlFor="porcentajeDominio"
-                  error={errors.porcentajeDominio?.message}
-                  helpText="El porcentaje de propiedad que le corresponde según escritura"
-                  required
+              <div className="space-y-2">
+                <Label className="text-lg font-medium">
+                  Tipo de propiedad <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={watchedValues.tipoPropietario}
+                  onValueChange={(value) => setValue('tipoPropietario', value as Paso2Form['tipoPropietario'])}
                 >
-                  <div className="flex items-center gap-3">
-                    <Input
-                      id="porcentajeDominio"
-                      type="number"
-                      min="1"
-                      max="100"
-                      {...register('porcentajeDominio', { valueAsNumber: true })}
-                      className="h-14 text-lg w-28"
-                    />
-                    <span className="text-xl font-medium">%</span>
-                  </div>
-                </FieldWithHelp>
+                  <SelectTrigger className="h-14 text-lg">
+                    <SelectValue placeholder="Seleccione el tipo de propiedad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(TIPOS_PROPIETARIO).map((tipo) => (
+                      <SelectItem key={tipo.valor} value={tipo.valor} className="text-lg py-3">
+                        {tipo.texto}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.tipoPropietario && (
+                  <p className="text-base text-red-600">{errors.tipoPropietario.message}</p>
+                )}
+              </div>
+
+              <div className="flex items-start space-x-4 p-5 border-2 rounded-xl bg-emerald-50 border-emerald-200">
+                <Checkbox
+                  id="destinoHabitacional"
+                  checked={watchedValues.destinoHabitacional}
+                  onCheckedChange={(checked) => setValue('destinoHabitacional', checked as boolean)}
+                  className="w-6 h-6 mt-1"
+                />
+                <div>
+                  <Label htmlFor="destinoHabitacional" className="cursor-pointer text-lg font-medium">
+                    La propiedad es mi vivienda habitual
+                  </Label>
+                  <p className="text-base text-muted-foreground mt-1">
+                    La uso como mi hogar o residencia principal (requisito esencial para el beneficio)
+                  </p>
+                </div>
+              </div>
+
+              {!watchedValues.destinoHabitacional && (
+                <Alert className="bg-amber-50 border-amber-200">
+                  <Info className="h-5 w-5 text-amber-600" />
+                  <AlertDescription className="text-base text-amber-800">
+                    El beneficio de la Ley 20.732 solo aplica a propiedades de uso habitacional.
+                    Si la propiedad no es su vivienda, el recurso tiene menos probabilidades de éxito.
+                  </AlertDescription>
+                </Alert>
               )}
             </>
           )}

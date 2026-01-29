@@ -2,415 +2,301 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useFormularioStore } from '@/lib/store';
-import { getCorteByRegion } from '@/data/cortes-apelaciones';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  User,
-  Home,
-  Wallet,
-  Building2,
-  Pencil,
-  ArrowLeft,
-  FileText,
-  CheckCircle2,
-  MapPin,
-  Calendar,
-  Phone,
-  Mail,
-  Percent,
-  TrendingUp,
-} from 'lucide-react';
+import { FieldWithHelp } from '@/components/formulario/FieldWithHelp';
+import { CurrencyInput } from '@/components/formulario/CurrencyInput';
+import { ArrowLeft, ArrowRight, Info, Plus, Trash2, Receipt } from 'lucide-react';
+import { TEXTOS_AYUDA } from '@/data/datos-fijos';
 
-function formatearPesos(valor: number): string {
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    minimumFractionDigits: 0,
-  }).format(valor);
-}
+const giroSchema = z.object({
+  numeroGiro: z.string().min(1, 'Ingrese el número de giro'),
+  fechaGiro: z.string().min(1, 'Ingrese la fecha del giro'),
+  monto: z.number({ message: 'Ingrese el monto' }).min(1, 'Ingrese el monto del giro'),
+});
 
-function calcularEdad(fechaNacimiento: string): number {
-  const hoy = new Date();
-  const nacimiento = new Date(fechaNacimiento);
-  let edad = hoy.getFullYear() - nacimiento.getFullYear();
-  const mes = hoy.getMonth() - nacimiento.getMonth();
-  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
-    edad--;
-  }
-  return edad;
-}
+const paso4Schema = z.object({
+  montoContribucionTrimestral: z
+    .number({ message: 'Ingrese el monto de la contribución' })
+    .min(1, 'Ingrese el monto de la contribución trimestral'),
+  tieneGirosPendientes: z.boolean(),
+  giros: z.array(giroSchema),
+});
 
-function getFuenteIngresosLabel(fuente: string): string {
-  const labels: Record<string, string> = {
-    pension: 'Pensión de vejez',
-    arriendos: 'Arriendos',
-    otros: 'Otros ingresos',
-    mixto: 'Combinación de fuentes',
-  };
-  return labels[fuente] || fuente;
-}
-
-function getBeneficioLabel(tipo: string): string {
-  const labels: Record<string, string> = {
-    parcial: 'Rebaja parcial (50%)',
-    total: 'Rebaja total (100%)',
-  };
-  return labels[tipo] || 'Ninguno';
-}
-
-interface DataRowProps {
-  icon?: React.ReactNode;
-  label: string;
-  value: string | number | undefined;
-  highlight?: boolean;
-}
-
-function DataRow({ icon, label, value, highlight = false }: DataRowProps) {
-  return (
-    <div className={`flex items-start gap-3 py-2 ${highlight ? 'bg-primary/5 -mx-4 px-4 rounded-lg' : ''}`}>
-      {icon && <span className="text-muted-foreground mt-0.5">{icon}</span>}
-      <div className="flex-1">
-        <p className="text-base text-muted-foreground">{label}</p>
-        <p className={`text-lg ${highlight ? 'font-semibold text-primary' : 'text-foreground'}`}>
-          {value || '-'}
-        </p>
-      </div>
-    </div>
-  );
-}
+type Paso4Form = z.infer<typeof paso4Schema>;
 
 export default function Paso4Page() {
   const router = useRouter();
-  const [confirmado, setConfirmado] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const {
-    datosPersonales,
-    datosPropiedad,
-    datosTributarios,
+    datosContribuciones,
+    datosEconomicos,
+    setDatosContribuciones,
     setCurrentStep,
     markStepComplete,
     isStepAccessible,
   } = useFormularioStore();
 
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    trigger,
+    formState: { errors },
+  } = useForm<Paso4Form>({
+    resolver: zodResolver(paso4Schema),
+    defaultValues: {
+      montoContribucionTrimestral: datosContribuciones.montoContribucionTrimestral ?? undefined,
+      tieneGirosPendientes: datosContribuciones.tieneGirosPendientes ?? false,
+      giros: datosContribuciones.giros ?? [],
+    },
+    mode: 'onBlur',
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'giros',
+  });
+
+  const watchedValues = watch();
+  const tieneGiros = watchedValues.tieneGirosPendientes;
+
+  // Cálculos para mostrar información útil
+  const contribucionAnual = (watchedValues.montoContribucionTrimestral || 0) * 4;
+  const ingresoAnual = (datosEconomicos.ingresoMensual || 0) * 12;
+  const porcentajeIngresos = ingresoAnual > 0 ? (contribucionAnual / ingresoAnual) * 100 : 0;
+
   useEffect(() => {
     if (!isStepAccessible(4)) {
-      router.replace('/formulario/paso-1');
+      router.replace('/formulario/paso-3');
       return;
     }
     setCurrentStep(4);
-  }, [isStepAccessible, router, setCurrentStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Determinar automáticamente la Corte de Apelaciones según la región de la propiedad
-  const corte = getCorteByRegion(datosPropiedad.regionPropiedad || 'Metropolitana');
-
-  // Cálculos
-  const edad = datosPersonales.fechaNacimiento
-    ? calcularEdad(datosPersonales.fechaNacimiento)
-    : 0;
-  const ingresoAnual = (datosTributarios.ingresoMensual || 0) * 12;
-  const contribucionAnual = (datosTributarios.montoContribucionTrimestral || 0) * 4;
-  const porcentajeIngresos = ingresoAnual > 0
-    ? (contribucionAnual / ingresoAnual) * 100
-    : 0;
-
-  const handleGenerar = async () => {
-    if (!confirmado) return;
-    setIsLoading(true);
-
-    // Pequeña pausa para mostrar el estado de carga
-    await new Promise(resolve => setTimeout(resolve, 500));
-
+  const onSubmit = (data: Paso4Form) => {
+    setDatosContribuciones(data);
     markStepComplete(4);
     router.push('/formulario/paso-5');
   };
 
+  const handleAddGiro = () => {
+    append({ numeroGiro: '', fechaGiro: '', monto: 0 });
+  };
+
+  const formatearPesos = (valor: number): string => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP',
+      minimumFractionDigits: 0,
+    }).format(valor);
+  };
+
   return (
-    <div>
+    <form onSubmit={handleSubmit(onSubmit)}>
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-3">Revisión de datos</h1>
-        <p className="text-lg text-muted-foreground">
-          Por favor revise que toda la información esté correcta antes de generar su recurso
-        </p>
+      <div className="mb-6">
+        <div className="flex items-center justify-between text-base text-muted-foreground mb-2">
+          <span>Paso 4 de 7: Contribuciones</span>
+        </div>
       </div>
 
-      {/* Datos personales */}
-      <Card className="mb-5">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="w-5 h-5 text-primary" />
-              </div>
-              <CardTitle className="text-xl">Datos personales</CardTitle>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/formulario/paso-1')}
-              className="h-10 px-4"
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Editar
-            </Button>
-          </div>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-2xl">Monto de las contribuciones</CardTitle>
         </CardHeader>
-        <CardContent className="pt-4">
-          <div className="space-y-1">
-            <p className="text-xl font-semibold text-foreground">
-              {datosPersonales.nombreCompleto}
-            </p>
-            <p className="text-lg text-muted-foreground">
-              RUT: {datosPersonales.rut}
-            </p>
-          </div>
+        <CardContent className="space-y-6">
+          <p className="text-lg text-muted-foreground mb-4">
+            Ingrese el monto que paga actualmente por contribuciones
+          </p>
 
-          <div className="grid gap-2 mt-4 pt-4 border-t">
-            <DataRow
-              icon={<Calendar className="w-4 h-4" />}
-              label="Edad"
-              value={`${edad} años`}
+          <FieldWithHelp
+            label="Contribución trimestral (en pesos)"
+            htmlFor="montoContribucionTrimestral"
+            error={errors.montoContribucionTrimestral?.message}
+            helpText="Este monto aparece en su boleta de contribuciones o en sii.cl"
+            required
+          >
+            <CurrencyInput
+              id="montoContribucionTrimestral"
+              value={watchedValues.montoContribucionTrimestral}
+              onChange={(value) => setValue('montoContribucionTrimestral', value as number)}
+              error={errors.montoContribucionTrimestral?.message}
+              placeholder="150.000"
             />
-            <DataRow
-              icon={<MapPin className="w-4 h-4" />}
-              label="Domicilio"
-              value={`${datosPersonales.domicilio}, ${datosPersonales.comuna}, ${datosPersonales.region}`}
-            />
-            {datosPersonales.telefono && (
-              <DataRow
-                icon={<Phone className="w-4 h-4" />}
-                label="Teléfono"
-                value={datosPersonales.telefono}
-              />
-            )}
-            {datosPersonales.email && (
-              <DataRow
-                icon={<Mail className="w-4 h-4" />}
-                label="Email"
-                value={datosPersonales.email}
-              />
-            )}
-          </div>
+          </FieldWithHelp>
 
-          {datosPersonales.actuaRepresentante && (
-            <Alert className="mt-4 bg-blue-50 border-blue-200">
-              <User className="w-4 h-4 text-blue-600" />
-              <AlertDescription className="text-blue-800">
-                Actúa un representante en nombre del adulto mayor
+          {/* Resumen calculado */}
+          {watchedValues.montoContribucionTrimestral && watchedValues.montoContribucionTrimestral > 0 && (
+            <div className="grid sm:grid-cols-2 gap-4 p-5 bg-muted/50 rounded-xl">
+              <div>
+                <p className="text-base text-muted-foreground">Contribución anual</p>
+                <p className="text-xl font-semibold">{formatearPesos(contribucionAnual)}</p>
+              </div>
+              {ingresoAnual > 0 && (
+                <div>
+                  <p className="text-base text-muted-foreground">Porcentaje de sus ingresos</p>
+                  <p className={`text-xl font-semibold ${porcentajeIngresos > 10 ? 'text-amber-600' : 'text-foreground'}`}>
+                    {porcentajeIngresos.toFixed(1)}%
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {porcentajeIngresos > 10 && (
+            <Alert className="bg-amber-50 border-amber-200">
+              <Info className="h-5 w-5 text-amber-600" />
+              <AlertDescription className="text-base text-amber-800">
+                Las contribuciones representan más del 10% de sus ingresos, lo que puede considerarse
+                desproporcionado. Este argumento fortalece su recurso.
               </AlertDescription>
             </Alert>
           )}
         </CardContent>
       </Card>
 
-      {/* Propiedad */}
-      <Card className="mb-5">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Home className="w-5 h-5 text-primary" />
-              </div>
-              <CardTitle className="text-xl">Propiedad afectada</CardTitle>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/formulario/paso-2')}
-              className="h-10 px-4"
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Editar
-            </Button>
-          </div>
+      {/* Giros pendientes */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-2xl">Giros a impugnar</CardTitle>
         </CardHeader>
-        <CardContent className="pt-4">
-          <div className="space-y-1">
-            <p className="text-xl font-semibold text-foreground">
-              {datosPropiedad.direccionPropiedad}
-            </p>
-            <p className="text-lg text-muted-foreground">
-              {datosPropiedad.comunaPropiedad}, {datosPropiedad.regionPropiedad}
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4 mt-4 pt-4 border-t">
-            <div className="p-4 bg-muted/50 rounded-xl">
-              <p className="text-base text-muted-foreground">Rol SII</p>
-              <p className="text-xl font-semibold">{datosPropiedad.rolSII}</p>
-            </div>
-            <div className="p-4 bg-muted/50 rounded-xl">
-              <p className="text-base text-muted-foreground">Avalúo fiscal</p>
-              <p className="text-xl font-semibold">
-                {formatearPesos(datosPropiedad.avaluoFiscal || 0)}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-2 mt-4 pt-4 border-t">
-            <DataRow
-              label="Uso de la propiedad"
-              value={datosPropiedad.destinoPropiedad === 'habitacional' ? 'Habitacional (vivienda)' : 'Otro uso'}
-            />
-            <DataRow
-              label="Tipo de propiedad"
-              value={
-                datosPropiedad.esPropietarioUnico
-                  ? 'Propietario único (100%)'
-                  : `Propiedad compartida (${datosPropiedad.porcentajeDominio || 0}%)`
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Situación tributaria */}
-      <Card className="mb-5">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Wallet className="w-5 h-5 text-primary" />
-              </div>
-              <CardTitle className="text-xl">Situación tributaria</CardTitle>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/formulario/paso-3')}
-              className="h-10 px-4"
-            >
-              <Pencil className="w-4 h-4 mr-2" />
-              Editar
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="p-4 bg-muted/50 rounded-xl">
-              <p className="text-base text-muted-foreground">Ingreso mensual</p>
-              <p className="text-xl font-semibold">
-                {formatearPesos(datosTributarios.ingresoMensual || 0)}
-              </p>
-              <p className="text-base text-muted-foreground mt-1">
-                {getFuenteIngresosLabel(datosTributarios.fuenteIngresos || '')}
-              </p>
-            </div>
-            <div className="p-4 bg-muted/50 rounded-xl">
-              <p className="text-base text-muted-foreground">Contribución trimestral</p>
-              <p className="text-xl font-semibold">
-                {formatearPesos(datosTributarios.montoContribucionTrimestral || 0)}
-              </p>
-              <p className="text-base text-muted-foreground mt-1">
-                {formatearPesos(contribucionAnual)} al año
-              </p>
-            </div>
-          </div>
-
-          {/* Porcentaje destacado */}
-          <div className={`mt-4 p-5 rounded-xl border-2 ${
-            porcentajeIngresos >= 25
-              ? 'bg-green-50 border-green-200'
-              : 'bg-blue-50 border-blue-200'
-          }`}>
-            <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                porcentajeIngresos >= 25 ? 'bg-green-100' : 'bg-blue-100'
-              }`}>
-                {porcentajeIngresos >= 25 ? (
-                  <TrendingUp className="w-6 h-6 text-green-600" />
-                ) : (
-                  <Percent className="w-6 h-6 text-blue-600" />
-                )}
-              </div>
-              <div>
-                <p className={`text-2xl font-bold ${
-                  porcentajeIngresos >= 25 ? 'text-green-700' : 'text-blue-700'
-                }`}>
-                  {porcentajeIngresos.toFixed(1)}% de sus ingresos
-                </p>
-                <p className={`text-base ${
-                  porcentajeIngresos >= 25 ? 'text-green-600' : 'text-blue-600'
-                }`}>
-                  destinado a pagar contribuciones
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2 mt-4 pt-4 border-t">
-            <DataRow
-              label="Otras propiedades"
-              value={datosTributarios.tieneOtrasPropiedades ? 'Sí' : 'No'}
-            />
-            <DataRow
-              label="Beneficio actual"
-              value={
-                datosTributarios.tieneBeneficioActual
-                  ? getBeneficioLabel(datosTributarios.tipoBeneficioActual || '')
-                  : 'Ninguno'
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Corte de Apelaciones (determinada automáticamente) */}
-      <Card className="mb-6 border-primary/50 bg-primary/5">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">Tribunal competente</CardTitle>
-              <p className="text-base text-muted-foreground">
-                Determinado según la región de la propiedad
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <p className="text-xl font-semibold text-foreground">
-            {corte.nombre}
+        <CardContent className="space-y-6">
+          <p className="text-lg text-muted-foreground mb-4">
+            Si tiene boletas de contribuciones específicas que quiere impugnar, puede agregarlas aquí
           </p>
-          <p className="text-lg text-muted-foreground mt-1">
-            <MapPin className="w-4 h-4 inline mr-1" />
-            {corte.direccion}, {corte.ciudad}
-          </p>
-        </CardContent>
-      </Card>
 
-      {/* Checkbox de confirmación */}
-      <Card className={`mb-6 border-2 transition-colors ${
-        confirmado ? 'border-green-500 bg-green-50' : 'border-primary'
-      }`}>
-        <CardContent className="py-6">
-          <div className="flex items-start space-x-4">
+          <div className="flex items-start space-x-4 p-5 border-2 rounded-xl bg-muted/30">
             <Checkbox
-              id="confirmacion"
-              checked={confirmado}
-              onCheckedChange={(checked) => setConfirmado(checked as boolean)}
-              className="w-7 h-7 mt-0.5"
+              id="tieneGirosPendientes"
+              checked={watchedValues.tieneGirosPendientes}
+              onCheckedChange={(checked) => setValue('tieneGirosPendientes', checked as boolean)}
+              className="w-6 h-6 mt-1"
             />
-            <Label
-              htmlFor="confirmacion"
-              className="cursor-pointer text-lg leading-relaxed flex-1"
-            >
-              Confirmo que los datos ingresados son correctos y verdaderos, y autorizo
-              la generación del recurso de protección con esta información.
-            </Label>
-          </div>
-          {confirmado && (
-            <div className="mt-4 flex items-center gap-2 text-green-700">
-              <CheckCircle2 className="w-5 h-5" />
-              <span className="text-base font-medium">Confirmación completada</span>
+            <div>
+              <Label htmlFor="tieneGirosPendientes" className="cursor-pointer text-lg font-medium">
+                Tengo giros específicos que quiero impugnar
+              </Label>
+              <p className="text-base text-muted-foreground mt-1">
+                Por ejemplo, boletas de contribuciones recientes que no debería haber pagado
+              </p>
             </div>
+          </div>
+
+          {tieneGiros && (
+            <>
+              <Alert>
+                <Info className="h-5 w-5" />
+                <AlertDescription className="text-base">
+                  {TEXTOS_AYUDA.giros}
+                </AlertDescription>
+              </Alert>
+
+              {/* Lista de giros */}
+              {fields.length > 0 && (
+                <div className="space-y-4">
+                  {fields.map((field, index) => (
+                    <div key={field.id} className="p-4 border rounded-xl bg-white">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <Receipt className="w-5 h-5 text-primary" />
+                          <span className="font-medium">Giro {index + 1}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => remove(index)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Eliminar
+                        </Button>
+                      </div>
+
+                      <div className="grid sm:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`giros.${index}.numeroGiro`}>Número de giro</Label>
+                          <Input
+                            id={`giros.${index}.numeroGiro`}
+                            {...register(`giros.${index}.numeroGiro`)}
+                            placeholder="Ej: 123456"
+                            className="h-12"
+                          />
+                          {errors.giros?.[index]?.numeroGiro && (
+                            <p className="text-sm text-red-600">
+                              {errors.giros[index]?.numeroGiro?.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`giros.${index}.fechaGiro`}>Fecha del giro</Label>
+                          <Input
+                            id={`giros.${index}.fechaGiro`}
+                            type="date"
+                            {...register(`giros.${index}.fechaGiro`)}
+                            className="h-12"
+                          />
+                          {errors.giros?.[index]?.fechaGiro && (
+                            <p className="text-sm text-red-600">
+                              {errors.giros[index]?.fechaGiro?.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`giros.${index}.monto`}>Monto</Label>
+                          <CurrencyInput
+                            id={`giros.${index}.monto`}
+                            value={watchedValues.giros?.[index]?.monto}
+                            onChange={(value) => setValue(`giros.${index}.monto`, value as number)}
+                            error={errors.giros?.[index]?.monto?.message}
+                            placeholder="150.000"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddGiro}
+                className="w-full h-14 text-lg border-dashed"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Agregar giro
+              </Button>
+
+              {tieneGiros && fields.length === 0 && (
+                <p className="text-base text-amber-600 text-center">
+                  Agregue al menos un giro para impugnar
+                </p>
+              )}
+            </>
+          )}
+
+          {!tieneGiros && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <Info className="h-5 w-5 text-blue-600" />
+              <AlertDescription className="text-base text-blue-800">
+                Si no agrega giros específicos, el recurso solicitará que se le aplique el beneficio
+                de la Ley 20.732 para todas las contribuciones futuras.
+              </AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>
@@ -428,24 +314,13 @@ export default function Paso4Page() {
         </Button>
 
         <Button
-          type="button"
-          onClick={handleGenerar}
-          disabled={!confirmado || isLoading}
-          className="h-14 px-8 text-lg min-w-[200px]"
+          type="submit"
+          className="h-14 px-8 text-lg min-w-[160px]"
         >
-          {isLoading ? (
-            <>
-              <span className="animate-spin mr-2">⏳</span>
-              Generando...
-            </>
-          ) : (
-            <>
-              <FileText className="w-5 h-5 mr-2" />
-              Generar mi recurso
-            </>
-          )}
+          Siguiente paso
+          <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

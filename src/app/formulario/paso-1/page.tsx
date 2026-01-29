@@ -10,26 +10,31 @@ import { validarRut } from '@/lib/rut-utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { FieldWithHelp } from '@/components/formulario/FieldWithHelp';
 import { RutInput } from '@/components/formulario/RutInput';
 import { DateInput } from '@/components/formulario/DateInput';
 import { RegionComunaSelect } from '@/components/formulario/RegionComunaSelect';
-import { VoiceInput } from '@/components/formulario/VoiceInput';
 import { ArrowLeft, ArrowRight, Home } from 'lucide-react';
+import { ESTADOS_CIVILES } from '@/data/datos-fijos';
 
 // Sub-pasos del paso 1
 const SUB_PASOS = [
-  { id: 1, title: '¿Quién presenta el recurso?', fields: ['actuaRepresentante'] },
-  { id: 2, title: 'Identificación', fields: ['nombreCompleto', 'rut'] },
-  { id: 3, title: 'Fecha de nacimiento', fields: ['fechaNacimiento'] },
+  { id: 1, title: 'Identificación', fields: ['nombreCompleto', 'rut'] },
+  { id: 2, title: 'Fecha de nacimiento', fields: ['fechaNacimiento'] },
+  { id: 3, title: 'Estado civil y profesión', fields: ['estadoCivil', 'profesion'] },
   { id: 4, title: 'Domicilio', fields: ['domicilio', 'region', 'comuna'] },
   { id: 5, title: 'Contacto (opcional)', fields: ['telefono', 'email'] },
 ];
 
 const paso1Schema = z.object({
-  actuaRepresentante: z.boolean(),
   nombreCompleto: z
     .string()
     .min(5, 'El nombre debe tener al menos 5 caracteres')
@@ -48,6 +53,14 @@ const paso1Schema = z.object({
       const edad = Math.floor((hoy.getTime() - nacimiento.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
       return edad >= 60;
     }, 'Debe tener al menos 60 años para usar este servicio'),
+  nacionalidad: z.string(),
+  estadoCivil: z.enum(['soltero', 'casado', 'viudo', 'divorciado', 'conviviente_civil'], {
+    message: 'Seleccione su estado civil',
+  }),
+  profesion: z
+    .string()
+    .min(2, 'Ingrese su profesión u ocupación')
+    .max(100, 'La profesión es demasiado larga'),
   domicilio: z
     .string()
     .min(10, 'Ingrese la dirección completa')
@@ -75,10 +88,12 @@ export default function Paso1Page() {
   } = useForm<Paso1Form>({
     resolver: zodResolver(paso1Schema),
     defaultValues: {
-      actuaRepresentante: datosPersonales.actuaRepresentante ?? false,
       nombreCompleto: datosPersonales.nombreCompleto ?? '',
       rut: datosPersonales.rut ?? '',
       fechaNacimiento: datosPersonales.fechaNacimiento ?? '',
+      nacionalidad: datosPersonales.nacionalidad ?? 'Chilena',
+      estadoCivil: datosPersonales.estadoCivil ?? undefined,
+      profesion: datosPersonales.profesion ?? '',
       domicilio: datosPersonales.domicilio ?? '',
       region: datosPersonales.region ?? '',
       comuna: datosPersonales.comuna ?? '',
@@ -90,14 +105,10 @@ export default function Paso1Page() {
 
   const watchedValues = watch();
 
-  // Guardar en el store cuando cambian los valores
-  useEffect(() => {
-    setDatosPersonales(watchedValues);
-  }, [watchedValues, setDatosPersonales]);
-
   useEffect(() => {
     setCurrentStep(1);
-  }, [setCurrentStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Validar campos del sub-paso actual
   const validateCurrentSubPaso = async (): Promise<boolean> => {
@@ -145,7 +156,7 @@ export default function Paso1Page() {
       {/* Indicador de sub-paso */}
       <div className="mb-6">
         <div className="flex items-center justify-between text-base text-muted-foreground mb-2">
-          <span>Paso 1 de 5: Datos personales</span>
+          <span>Paso 1 de 7: Datos personales</span>
           <span>{subPaso} de {SUB_PASOS.length}</span>
         </div>
         <div className="flex gap-1">
@@ -165,34 +176,8 @@ export default function Paso1Page() {
           <CardTitle className="text-2xl">{currentSubPaso.title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Sub-paso 1: Tipo de recurrente */}
+          {/* Sub-paso 1: Nombre y RUT */}
           {subPaso === 1 && (
-            <div className="space-y-4">
-              <p className="text-lg text-muted-foreground">
-                Indique si usted es el adulto mayor afectado o si actúa en su representación
-              </p>
-              <RadioGroup
-                value={watchedValues.actuaRepresentante ? 'representante' : 'yo'}
-                onValueChange={(value) => setValue('actuaRepresentante', value === 'representante')}
-              >
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="yo" id="yo" className="w-6 h-6" />
-                  <Label htmlFor="yo" className="cursor-pointer flex-1 text-lg">
-                    Yo mismo soy el adulto mayor afectado
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="representante" id="representante" className="w-6 h-6" />
-                  <Label htmlFor="representante" className="cursor-pointer flex-1 text-lg">
-                    Actúo como familiar o representante
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
-
-          {/* Sub-paso 2: Nombre y RUT */}
-          {subPaso === 2 && (
             <>
               <p className="text-lg text-muted-foreground mb-4">
                 Ingrese los datos de identificación del adulto mayor
@@ -205,19 +190,13 @@ export default function Paso1Page() {
                 example="María Elena González Pérez"
                 required
               >
-                <div className="flex gap-2">
-                  <Input
-                    id="nombreCompleto"
-                    {...register('nombreCompleto')}
-                    placeholder="Ingrese nombre completo"
-                    className="h-14 text-lg flex-1"
-                    autoFocus
-                  />
-                  <VoiceInput
-                    onResult={(text) => setValue('nombreCompleto', text)}
-                    buttonLabel="Dictar"
-                  />
-                </div>
+                <Input
+                  id="nombreCompleto"
+                  {...register('nombreCompleto')}
+                  placeholder="Ingrese nombre completo"
+                  className="h-14 text-lg"
+                  autoFocus
+                />
               </FieldWithHelp>
 
               <FieldWithHelp
@@ -236,8 +215,8 @@ export default function Paso1Page() {
             </>
           )}
 
-          {/* Sub-paso 3: Fecha de nacimiento */}
-          {subPaso === 3 && (
+          {/* Sub-paso 2: Fecha de nacimiento */}
+          {subPaso === 2 && (
             <>
               <p className="text-lg text-muted-foreground mb-4">
                 Seleccione la fecha de nacimiento para verificar que cumple con el requisito de edad (60 años o más)
@@ -258,6 +237,54 @@ export default function Paso1Page() {
             </>
           )}
 
+          {/* Sub-paso 3: Estado civil y profesión */}
+          {subPaso === 3 && (
+            <>
+              <p className="text-lg text-muted-foreground mb-4">
+                Estos datos aparecerán en el documento legal
+              </p>
+
+              <div className="space-y-2">
+                <Label className="text-lg font-medium">
+                  Estado civil <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={watchedValues.estadoCivil}
+                  onValueChange={(value) => setValue('estadoCivil', value as Paso1Form['estadoCivil'])}
+                >
+                  <SelectTrigger className="h-14 text-lg">
+                    <SelectValue placeholder="Seleccione su estado civil" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(ESTADOS_CIVILES).map((estado) => (
+                      <SelectItem key={estado.valor} value={estado.valor} className="text-lg py-3">
+                        {estado.textoMasculino.charAt(0).toUpperCase() + estado.textoMasculino.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.estadoCivil && (
+                  <p className="text-base text-red-600">{errors.estadoCivil.message}</p>
+                )}
+              </div>
+
+              <FieldWithHelp
+                label="Profesión u ocupación"
+                htmlFor="profesion"
+                error={errors.profesion?.message}
+                example="Jubilado/a, Dueña de casa, Comerciante"
+                required
+              >
+                <Input
+                  id="profesion"
+                  {...register('profesion')}
+                  placeholder="Ej: Jubilado/a"
+                  className="h-14 text-lg"
+                />
+              </FieldWithHelp>
+            </>
+          )}
+
           {/* Sub-paso 4: Domicilio */}
           {subPaso === 4 && (
             <>
@@ -272,19 +299,13 @@ export default function Paso1Page() {
                 example="Av. Providencia 1234, depto 56"
                 required
               >
-                <div className="flex gap-2">
-                  <Input
-                    id="domicilio"
-                    {...register('domicilio')}
-                    placeholder="Calle, número, depto/casa"
-                    className="h-14 text-lg flex-1"
-                    autoFocus
-                  />
-                  <VoiceInput
-                    onResult={(text) => setValue('domicilio', text)}
-                    buttonLabel="Dictar"
-                  />
-                </div>
+                <Input
+                  id="domicilio"
+                  {...register('domicilio')}
+                  placeholder="Calle, número, depto/casa"
+                  className="h-14 text-lg"
+                  autoFocus
+                />
               </FieldWithHelp>
 
               <div className="space-y-2">
@@ -312,7 +333,7 @@ export default function Paso1Page() {
           {subPaso === 5 && (
             <>
               <p className="text-lg text-muted-foreground mb-4">
-                Estos datos son opcionales pero útiles si necesitamos contactarlo
+                Estos datos son opcionales pero útiles para que la Corte pueda contactarlo
               </p>
 
               <FieldWithHelp

@@ -7,51 +7,57 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useFormularioStore } from '@/lib/store';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { FieldWithHelp } from '@/components/formulario/FieldWithHelp';
 import { CurrencyInput } from '@/components/formulario/CurrencyInput';
-import { ArrowLeft, ArrowRight, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AlertTriangle, Info } from 'lucide-react';
+import { FUENTES_INGRESO, TRAMOS_RSH, TIPOS_BENEFICIO, TEXTOS_AYUDA } from '@/data/datos-fijos';
 
 // Sub-pasos del paso 3
 const SUB_PASOS = [
-  { id: 1, title: 'Ingresos mensuales', fields: ['ingresoMensual', 'fuenteIngresos'] },
-  { id: 2, title: 'Otras propiedades', fields: ['tieneOtrasPropiedades'] },
-  { id: 3, title: 'Beneficios actuales', fields: ['tieneBeneficioActual', 'tipoBeneficioActual'] },
-  { id: 4, title: 'Monto de contribuciones', fields: ['montoContribucionTrimestral'] },
+  { id: 1, title: 'Ingresos mensuales', fields: ['ingresoMensual', 'fuentesIngreso'] },
+  { id: 2, title: 'Registro Social de Hogares', fields: ['estaEnRSH'] },
+  { id: 3, title: 'Otras propiedades y beneficios', fields: ['tieneOtrasPropiedades', 'tieneBeneficioActual'] },
 ];
 
 const paso3Schema = z.object({
   ingresoMensual: z
-    .number({ error: 'Ingrese su ingreso mensual' })
+    .number({ message: 'Ingrese su ingreso mensual' })
     .min(0, 'El ingreso no puede ser negativo'),
-  fuenteIngresos: z.enum(['pension', 'arriendos', 'otros', 'mixto']),
+  fuentesIngreso: z
+    .array(z.enum(['pgu', 'pension_afp', 'pension_sobrevivencia', 'arriendos', 'otros']))
+    .min(1, 'Seleccione al menos una fuente de ingresos'),
+  fuenteIngresoOtros: z.string().optional(),
+  estaEnRSH: z.enum(['si', 'no', 'no_se'], {
+    message: 'Indique si está inscrito en el Registro Social de Hogares',
+  }),
+  tramoRSH: z.enum(['40', '50', '60', '70', '80', '90']).optional(),
   tieneOtrasPropiedades: z.boolean(),
-  tieneBeneficioActual: z.boolean(),
-  tipoBeneficioActual: z.string().optional(),
-  montoContribucionTrimestral: z
-    .number({ error: 'Ingrese el monto de contribuciones' })
-    .min(0, 'El monto no puede ser negativo'),
+  tieneBeneficioActual: z.enum(['ninguno', 'parcial_50', 'total_100'], {
+    message: 'Indique si tiene algún beneficio actualmente',
+  }),
 });
 
 type Paso3Form = z.infer<typeof paso3Schema>;
-
-function formatearPesos(valor: number): string {
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    minimumFractionDigits: 0,
-  }).format(valor);
-}
 
 export default function Paso3Page() {
   const router = useRouter();
   const [subPaso, setSubPaso] = useState(1);
   const {
-    datosTributarios,
-    setDatosTributarios,
+    datosEconomicos,
+    setDatosEconomicos,
     setCurrentStep,
     markStepComplete,
     isStepAccessible,
@@ -66,12 +72,13 @@ export default function Paso3Page() {
   } = useForm<Paso3Form>({
     resolver: zodResolver(paso3Schema),
     defaultValues: {
-      ingresoMensual: datosTributarios.ingresoMensual ?? undefined,
-      fuenteIngresos: datosTributarios.fuenteIngresos ?? 'pension',
-      tieneOtrasPropiedades: datosTributarios.tieneOtrasPropiedades ?? false,
-      tieneBeneficioActual: datosTributarios.tieneBeneficioActual ?? false,
-      tipoBeneficioActual: datosTributarios.tipoBeneficioActual ?? '',
-      montoContribucionTrimestral: datosTributarios.montoContribucionTrimestral ?? undefined,
+      ingresoMensual: datosEconomicos.ingresoMensual ?? undefined,
+      fuentesIngreso: datosEconomicos.fuentesIngreso ?? [],
+      fuenteIngresoOtros: datosEconomicos.fuenteIngresoOtros ?? '',
+      estaEnRSH: datosEconomicos.estaEnRSH ?? undefined,
+      tramoRSH: datosEconomicos.tramoRSH ?? undefined,
+      tieneOtrasPropiedades: datosEconomicos.tieneOtrasPropiedades ?? false,
+      tieneBeneficioActual: datosEconomicos.tieneBeneficioActual ?? undefined,
     },
     mode: 'onBlur',
   });
@@ -84,36 +91,31 @@ export default function Paso3Page() {
       return;
     }
     setCurrentStep(3);
-  }, [isStepAccessible, router, setCurrentStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  useEffect(() => {
-    setDatosTributarios(watchedValues);
-  }, [watchedValues, setDatosTributarios]);
+  const handleFuenteIngresoChange = (fuente: string, checked: boolean) => {
+    const current = watchedValues.fuentesIngreso || [];
+    if (checked) {
+      setValue('fuentesIngreso', [...current, fuente] as Paso3Form['fuentesIngreso']);
+    } else {
+      setValue('fuentesIngreso', current.filter((f) => f !== fuente) as Paso3Form['fuentesIngreso']);
+    }
+  };
 
-  // Cálculos automáticos
-  const ingresoAnual = (watchedValues.ingresoMensual || 0) * 12;
-  const contribucionAnual = (watchedValues.montoContribucionTrimestral || 0) * 4;
-  const porcentajeIngresos = ingresoAnual > 0
-    ? (contribucionAnual / ingresoAnual) * 100
-    : 0;
-  const contribucionMensual = (watchedValues.montoContribucionTrimestral || 0) / 3;
-
-  // Determinar si el caso es favorable (contribuciones > 25% de ingresos es un caso fuerte)
-  const casoFavorable = porcentajeIngresos >= 25;
-
-  // Validar campos del sub-paso actual
   const validateCurrentSubPaso = async (): Promise<boolean> => {
     if (subPaso === 1) {
-      return await trigger(['ingresoMensual', 'fuenteIngresos']);
+      return await trigger(['ingresoMensual', 'fuentesIngreso']);
     }
     if (subPaso === 2) {
-      return await trigger(['tieneOtrasPropiedades']);
+      const valid = await trigger(['estaEnRSH']);
+      if (valid && watchedValues.estaEnRSH === 'si') {
+        return await trigger(['tramoRSH']);
+      }
+      return valid;
     }
     if (subPaso === 3) {
-      return true; // Beneficio actual es opcional
-    }
-    if (subPaso === 4) {
-      return await trigger(['montoContribucionTrimestral']);
+      return await trigger(['tieneOtrasPropiedades', 'tieneBeneficioActual']);
     }
     return true;
   };
@@ -136,7 +138,7 @@ export default function Paso3Page() {
   };
 
   const onSubmit = (data: Paso3Form) => {
-    setDatosTributarios({
+    setDatosEconomicos({
       ...data,
       ingresoAnual: data.ingresoMensual * 12,
     });
@@ -158,7 +160,7 @@ export default function Paso3Page() {
       {/* Indicador de sub-paso */}
       <div className="mb-6">
         <div className="flex items-center justify-between text-base text-muted-foreground mb-2">
-          <span>Paso 3 de 5: Situación tributaria</span>
+          <span>Paso 3 de 7: Situación económica</span>
           <span>{subPaso} de {SUB_PASOS.length}</span>
         </div>
         <div className="flex gap-1">
@@ -202,74 +204,154 @@ export default function Paso3Page() {
               </FieldWithHelp>
 
               <div className="space-y-3">
-                <Label className="text-lg font-medium">Principal fuente de ingresos</Label>
+                <Label className="text-lg font-medium">
+                  Fuentes de ingresos <span className="text-red-500">*</span>
+                </Label>
+                <p className="text-base text-muted-foreground">
+                  Seleccione todas las que apliquen
+                </p>
+                <div className="space-y-3">
+                  {Object.values(FUENTES_INGRESO).map((fuente) => (
+                    <div
+                      key={fuente.valor}
+                      className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
+                    >
+                      <Checkbox
+                        id={fuente.valor}
+                        checked={watchedValues.fuentesIngreso?.includes(fuente.valor as Paso3Form['fuentesIngreso'][number])}
+                        onCheckedChange={(checked) => handleFuenteIngresoChange(fuente.valor, checked as boolean)}
+                        className="w-6 h-6"
+                      />
+                      <Label htmlFor={fuente.valor} className="cursor-pointer flex-1 text-lg">
+                        {fuente.texto}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {errors.fuentesIngreso && (
+                  <p className="text-base text-red-600">{errors.fuentesIngreso.message}</p>
+                )}
+              </div>
+
+              {watchedValues.fuentesIngreso?.includes('otros') && (
+                <FieldWithHelp
+                  label="Especifique otros ingresos"
+                  htmlFor="fuenteIngresoOtros"
+                  error={errors.fuenteIngresoOtros?.message}
+                >
+                  <Input
+                    id="fuenteIngresoOtros"
+                    value={watchedValues.fuenteIngresoOtros || ''}
+                    onChange={(e) => setValue('fuenteIngresoOtros', e.target.value)}
+                    placeholder="Ej: Trabajo independiente, ahorros"
+                    className="h-14 text-lg"
+                  />
+                </FieldWithHelp>
+              )}
+            </>
+          )}
+
+          {/* Sub-paso 2: Registro Social de Hogares */}
+          {subPaso === 2 && (
+            <>
+              <p className="text-lg text-muted-foreground mb-4">
+                El Registro Social de Hogares puede fortalecer su caso
+              </p>
+
+              <Alert>
+                <Info className="h-5 w-5" />
+                <AlertDescription className="text-base">
+                  {TEXTOS_AYUDA.registroSocialHogares}
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                <Label className="text-lg font-medium">
+                  ¿Está inscrito en el Registro Social de Hogares? <span className="text-red-500">*</span>
+                </Label>
                 <RadioGroup
-                  value={watchedValues.fuenteIngresos}
-                  onValueChange={(value) => setValue('fuenteIngresos', value as 'pension' | 'arriendos' | 'otros' | 'mixto')}
+                  value={watchedValues.estaEnRSH}
+                  onValueChange={(value) => setValue('estaEnRSH', value as Paso3Form['estaEnRSH'])}
                 >
                   <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                    <RadioGroupItem value="pension" id="pension" className="w-6 h-6" />
-                    <Label htmlFor="pension" className="cursor-pointer flex-1 text-lg">
-                      Pensión de vejez
+                    <RadioGroupItem value="si" id="rsh-si" className="w-6 h-6" />
+                    <Label htmlFor="rsh-si" className="cursor-pointer flex-1 text-lg">
+                      Sí, estoy inscrito
                     </Label>
                   </div>
                   <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                    <RadioGroupItem value="arriendos" id="arriendos" className="w-6 h-6" />
-                    <Label htmlFor="arriendos" className="cursor-pointer flex-1 text-lg">
-                      Arriendos
+                    <RadioGroupItem value="no" id="rsh-no" className="w-6 h-6" />
+                    <Label htmlFor="rsh-no" className="cursor-pointer flex-1 text-lg">
+                      No estoy inscrito
                     </Label>
                   </div>
                   <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                    <RadioGroupItem value="mixto" id="mixto" className="w-6 h-6" />
-                    <Label htmlFor="mixto" className="cursor-pointer flex-1 text-lg">
-                      Combinación de fuentes
+                    <RadioGroupItem value="no_se" id="rsh-nose" className="w-6 h-6" />
+                    <Label htmlFor="rsh-nose" className="cursor-pointer flex-1 text-lg">
+                      No sé si estoy inscrito
+                    </Label>
+                  </div>
+                </RadioGroup>
+                {errors.estaEnRSH && (
+                  <p className="text-base text-red-600">{errors.estaEnRSH.message}</p>
+                )}
+              </div>
+
+              {watchedValues.estaEnRSH === 'si' && (
+                <div className="space-y-2">
+                  <Label className="text-lg font-medium">
+                    ¿En qué tramo se encuentra? <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={watchedValues.tramoRSH}
+                    onValueChange={(value) => setValue('tramoRSH', value as Paso3Form['tramoRSH'])}
+                  >
+                    <SelectTrigger className="h-14 text-lg">
+                      <SelectValue placeholder="Seleccione el tramo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(TRAMOS_RSH).map((tramo) => (
+                        <SelectItem key={tramo.valor} value={tramo.valor} className="text-lg py-3">
+                          {tramo.texto}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.tramoRSH && (
+                    <p className="text-base text-red-600">{errors.tramoRSH.message}</p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Sub-paso 3: Otras propiedades y beneficios */}
+          {subPaso === 3 && (
+            <>
+              <p className="text-lg text-muted-foreground mb-4">
+                Información adicional sobre su situación
+              </p>
+
+              <div className="space-y-3">
+                <Label className="text-lg font-medium">¿Tiene otras propiedades?</Label>
+                <RadioGroup
+                  value={watchedValues.tieneOtrasPropiedades ? 'si' : 'no'}
+                  onValueChange={(value) => setValue('tieneOtrasPropiedades', value === 'si')}
+                >
+                  <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
+                    <RadioGroupItem value="no" id="otras-no" className="w-6 h-6" />
+                    <Label htmlFor="otras-no" className="cursor-pointer flex-1 text-lg">
+                      No, esta es mi única propiedad
                     </Label>
                   </div>
                   <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                    <RadioGroupItem value="otros" id="otros" className="w-6 h-6" />
-                    <Label htmlFor="otros" className="cursor-pointer flex-1 text-lg">
-                      Otros ingresos
+                    <RadioGroupItem value="si" id="otras-si" className="w-6 h-6" />
+                    <Label htmlFor="otras-si" className="cursor-pointer flex-1 text-lg">
+                      Sí, tengo otras propiedades
                     </Label>
                   </div>
                 </RadioGroup>
               </div>
-            </>
-          )}
-
-          {/* Sub-paso 2: Otras propiedades */}
-          {subPaso === 2 && (
-            <>
-              <p className="text-lg text-muted-foreground mb-4">
-                Indique si posee otras propiedades además de la afectada
-              </p>
-
-              <RadioGroup
-                value={watchedValues.tieneOtrasPropiedades ? 'si' : 'no'}
-                onValueChange={(value) => setValue('tieneOtrasPropiedades', value === 'si')}
-              >
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="no" id="otras-no" className="w-6 h-6" />
-                  <div className="flex-1">
-                    <Label htmlFor="otras-no" className="cursor-pointer text-lg font-medium">
-                      No, esta es mi única propiedad
-                    </Label>
-                    <p className="text-base text-muted-foreground">
-                      No soy dueño de otras propiedades
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="si" id="otras-si" className="w-6 h-6" />
-                  <div className="flex-1">
-                    <Label htmlFor="otras-si" className="cursor-pointer text-lg font-medium">
-                      Sí, tengo otras propiedades
-                    </Label>
-                    <p className="text-base text-muted-foreground">
-                      Poseo otras propiedades a mi nombre
-                    </p>
-                  </div>
-                </div>
-              </RadioGroup>
 
               {watchedValues.tieneOtrasPropiedades && (
                 <Alert className="bg-amber-50 border-amber-200">
@@ -281,154 +363,31 @@ export default function Paso3Page() {
                   </AlertDescription>
                 </Alert>
               )}
-            </>
-          )}
 
-          {/* Sub-paso 3: Beneficios actuales */}
-          {subPaso === 3 && (
-            <>
-              <p className="text-lg text-muted-foreground mb-4">
-                ¿Actualmente tiene algún beneficio de rebaja de contribuciones?
-              </p>
-
-              <RadioGroup
-                value={
-                  watchedValues.tieneBeneficioActual
-                    ? watchedValues.tipoBeneficioActual || 'parcial'
-                    : 'ninguno'
-                }
-                onValueChange={(value) => {
-                  if (value === 'ninguno') {
-                    setValue('tieneBeneficioActual', false);
-                    setValue('tipoBeneficioActual', '');
-                  } else {
-                    setValue('tieneBeneficioActual', true);
-                    setValue('tipoBeneficioActual', value);
-                  }
-                }}
-              >
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="ninguno" id="beneficio-ninguno" className="w-6 h-6" />
-                  <div className="flex-1">
-                    <Label htmlFor="beneficio-ninguno" className="cursor-pointer text-lg font-medium">
-                      No tengo ningún beneficio
-                    </Label>
-                    <p className="text-base text-muted-foreground">
-                      Pago el 100% de las contribuciones
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="parcial" id="beneficio-parcial" className="w-6 h-6" />
-                  <div className="flex-1">
-                    <Label htmlFor="beneficio-parcial" className="cursor-pointer text-lg font-medium">
-                      Tengo rebaja parcial (50%)
-                    </Label>
-                    <p className="text-base text-muted-foreground">
-                      Ya cuento con beneficio del 50%
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem value="total" id="beneficio-total" className="w-6 h-6" />
-                  <div className="flex-1">
-                    <Label htmlFor="beneficio-total" className="cursor-pointer text-lg font-medium">
-                      Tengo rebaja total (100%)
-                    </Label>
-                    <p className="text-base text-muted-foreground">
-                      Actualmente no pago contribuciones
-                    </p>
-                  </div>
-                </div>
-              </RadioGroup>
-            </>
-          )}
-
-          {/* Sub-paso 4: Monto de contribuciones */}
-          {subPaso === 4 && (
-            <>
-              <p className="text-lg text-muted-foreground mb-4">
-                Ingrese el monto que paga actualmente en contribuciones
-              </p>
-
-              <FieldWithHelp
-                label="Monto de contribuciones (por trimestre)"
-                htmlFor="montoContribucionTrimestral"
-                error={errors.montoContribucionTrimestral?.message}
-                helpText="Es el monto que paga cada 3 meses según su boleta"
-                required
-              >
-                <CurrencyInput
-                  id="montoContribucionTrimestral"
-                  value={watchedValues.montoContribucionTrimestral}
-                  onChange={(value) => setValue('montoContribucionTrimestral', value as number)}
-                  error={errors.montoContribucionTrimestral?.message}
-                  placeholder="420.000"
-                />
-              </FieldWithHelp>
-
-              {/* Resumen calculado automáticamente */}
-              {watchedValues.ingresoMensual && watchedValues.montoContribucionTrimestral && (
-                <div className="space-y-4 pt-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                    Análisis de su situación
-                  </h3>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="p-4 bg-muted rounded-xl">
-                      <p className="text-base text-muted-foreground">Contribución mensual equivalente</p>
-                      <p className="text-2xl font-bold text-foreground">
-                        {formatearPesos(contribucionMensual)}
-                      </p>
+              <div className="space-y-3">
+                <Label className="text-lg font-medium">
+                  ¿Tiene actualmente algún beneficio de contribuciones? <span className="text-red-500">*</span>
+                </Label>
+                <RadioGroup
+                  value={watchedValues.tieneBeneficioActual}
+                  onValueChange={(value) => setValue('tieneBeneficioActual', value as Paso3Form['tieneBeneficioActual'])}
+                >
+                  {Object.values(TIPOS_BENEFICIO).map((beneficio) => (
+                    <div
+                      key={beneficio.valor}
+                      className="flex items-center space-x-4 p-5 border-2 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
+                    >
+                      <RadioGroupItem value={beneficio.valor} id={beneficio.valor} className="w-6 h-6" />
+                      <Label htmlFor={beneficio.valor} className="cursor-pointer flex-1 text-lg">
+                        {beneficio.texto}
+                      </Label>
                     </div>
-                    <div className="p-4 bg-muted rounded-xl">
-                      <p className="text-base text-muted-foreground">Contribución anual total</p>
-                      <p className="text-2xl font-bold text-foreground">
-                        {formatearPesos(contribucionAnual)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className={`p-5 rounded-xl border-2 ${
-                    casoFavorable
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-blue-50 border-blue-200'
-                  }`}>
-                    <div className="flex items-start gap-3">
-                      {casoFavorable ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      ) : (
-                        <TrendingUp className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
-                      )}
-                      <div>
-                        <p className={`text-lg font-semibold ${
-                          casoFavorable ? 'text-green-800' : 'text-blue-800'
-                        }`}>
-                          Las contribuciones representan el {porcentajeIngresos.toFixed(1)}% de sus ingresos
-                        </p>
-                        <p className={`text-base mt-1 ${
-                          casoFavorable ? 'text-green-700' : 'text-blue-700'
-                        }`}>
-                          {casoFavorable
-                            ? 'Este porcentaje fortalece significativamente su caso, ya que demuestra una carga tributaria desproporcionada respecto a sus ingresos.'
-                            : 'Su caso puede tener mérito legal. El recurso argumentará la desproporción entre sus ingresos y el aumento de contribuciones.'
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-muted/50 rounded-xl">
-                    <p className="text-base text-muted-foreground">
-                      <strong>Resumen:</strong> Usted paga {formatearPesos(contribucionMensual)} mensuales
-                      en contribuciones de un ingreso mensual de {formatearPesos(watchedValues.ingresoMensual)},
-                      lo que equivale al {porcentajeIngresos.toFixed(1)}% de sus ingresos destinados
-                      exclusivamente a este impuesto.
-                    </p>
-                  </div>
-                </div>
-              )}
+                  ))}
+                </RadioGroup>
+                {errors.tieneBeneficioActual && (
+                  <p className="text-base text-red-600">{errors.tieneBeneficioActual.message}</p>
+                )}
+              </div>
             </>
           )}
         </CardContent>
@@ -461,7 +420,7 @@ export default function Paso3Page() {
             onClick={handleFinalSubmit}
             className="h-14 px-8 text-lg min-w-[160px]"
           >
-            Revisar datos
+            Siguiente paso
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         )}
