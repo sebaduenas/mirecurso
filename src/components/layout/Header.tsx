@@ -4,22 +4,25 @@ import Link from 'next/link';
 
 export function Header() {
   return (
-    <header className="border-b border-border bg-white">
-      <div className="mx-auto max-w-4xl px-4 py-4">
+    <header className="sticky top-0 z-50 border-b border-border/50 bg-white/80 backdrop-blur-lg">
+      <div className="mx-auto max-w-5xl px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-xl font-semibold text-primary">
+          <Link
+            href="/"
+            className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity"
+          >
             mirecurso.cl
           </Link>
-          <nav className="flex gap-8">
+          <nav className="flex items-center gap-2">
             <Link
               href="/como-funciona"
-              className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-base font-medium text-muted-foreground hover:text-foreground px-4 py-2 rounded-full hover:bg-muted transition-colors"
             >
               Cómo funciona
             </Link>
             <Link
               href="/preguntas"
-              className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-base font-medium text-muted-foreground hover:text-foreground px-4 py-2 rounded-full hover:bg-muted transition-colors"
             >
               Preguntas
             </Link>

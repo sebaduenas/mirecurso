@@ -47,42 +47,53 @@
 }
 
 :root {
-  --radius: 0.5rem;
-  /* Colores según PRD - Accesibilidad WCAG AAA */
-  --background: #F8FAFC;
-  --foreground: #1E293B;
+  --radius: 0.75rem;
+
+  /* Paleta moderna pero accesible - WCAG AAA */
+  --background: #FAFBFC;
+  --foreground: #0F172A;
+
   --card: #FFFFFF;
-  --card-foreground: #1E293B;
+  --card-foreground: #0F172A;
+
   --popover: #FFFFFF;
-  --popover-foreground: #1E293B;
-  /* Primario: Azul oscuro - confianza, institucional */
-  --primary: #1E3A8A;
+  --popover-foreground: #0F172A;
+
+  /* Primario: Azul vibrante pero profesional */
+  --primary: #2563EB;
   --primary-foreground: #FFFFFF;
-  /* Secundario: Verde - éxito, confirmación */
-  --secondary: #059669;
+
+  /* Secundario: Verde esmeralda */
+  --secondary: #10B981;
   --secondary-foreground: #FFFFFF;
+
   --muted: #F1F5F9;
-  /* Muted foreground oscurecido para WCAG AAA (7:1) - antes #475569 (5.9:1) */
   --muted-foreground: #334155;
-  --accent: #E0E7FF;
-  --accent-foreground: #1E3A8A;
-  /* Error: Rojo */
-  --destructive: #DC2626;
-  --border: #CBD5E1;
-  --input: #CBD5E1;
+
+  /* Accent: Indigo suave */
+  --accent: #EEF2FF;
+  --accent-foreground: #3730A3;
+
+  --destructive: #EF4444;
+
+  --border: #E2E8F0;
+  --input: #E2E8F0;
   --ring: #3B82F6;
-  --chart-1: #1E3A8A;
-  --chart-2: #059669;
-  --chart-3: #D97706;
-  --chart-4: #7C3AED;
+
+  /* Chart colors */
+  --chart-1: #2563EB;
+  --chart-2: #10B981;
+  --chart-3: #F59E0B;
+  --chart-4: #8B5CF6;
   --chart-5: #EC4899;
+
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #1E293B;
-  --sidebar-primary: #1E3A8A;
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #2563EB;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #E0E7FF;
-  --sidebar-accent-foreground: #1E3A8A;
-  --sidebar-border: #CBD5E1;
+  --sidebar-accent: #EEF2FF;
+  --sidebar-accent-foreground: #3730A3;
+  --sidebar-border: #E2E8F0;
   --sidebar-ring: #3B82F6;
 }
 
@@ -92,10 +103,10 @@
   }
 
   html {
-    /* Tamaño base 18px para accesibilidad */
     font-size: 18px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
   }
 
   body {
@@ -126,7 +137,13 @@
 
   /* Transiciones suaves */
   button, a, input, select, textarea {
-    transition: all 150ms ease-in-out;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Headings con mejor tracking */
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
   }
 }
 
@@ -136,13 +153,85 @@
     text-wrap: balance;
   }
 
-  /* Contenedor de formulario */
+  /* Contenedor de formulario mejorado */
   .form-container {
-    @apply bg-card rounded-lg border border-border p-6 sm:p-8 shadow-sm;
+    @apply bg-card rounded-2xl border border-border p-6 sm:p-8 shadow-lg shadow-black/5;
   }
 
   /* Espaciado entre campos */
   .field-spacing {
     @apply space-y-6;
+  }
+
+  /* Gradientes modernos */
+  .gradient-hero {
+    background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 50%, #C7D2FE 100%);
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  }
+
+  .gradient-success {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  }
+
+  /* Glassmorphism sutil */
+  .glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Sombras modernas */
+  .shadow-soft {
+    box-shadow:
+      0 2px 8px -2px rgba(0, 0, 0, 0.05),
+      0 4px 16px -4px rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-glow {
+    box-shadow:
+      0 0 0 1px rgba(37, 99, 235, 0.1),
+      0 4px 16px -4px rgba(37, 99, 235, 0.2);
+  }
+
+  .shadow-glow-success {
+    box-shadow:
+      0 0 0 1px rgba(16, 185, 129, 0.1),
+      0 4px 16px -4px rgba(16, 185, 129, 0.2);
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 4px 12px -2px rgba(0, 0, 0, 0.08),
+      0 8px 24px -4px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Animated gradient background */
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  /* Pulse subtle for CTAs */
+  .pulse-subtle {
+    animation: pulse-subtle 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
   }
 }

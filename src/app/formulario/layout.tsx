@@ -22,23 +22,26 @@ export default function FormularioLayout({
   const { currentStep } = useFormularioStore();
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white">
       {/* Diálogo de recuperación de sesión */}
       <SessionRecoveryDialog />
 
-      {/* Header simplificado */}
-      <header className="border-b border-border bg-white">
+      {/* Header con glassmorphism */}
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-white/80 backdrop-blur-lg">
         <div className="mx-auto max-w-4xl px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="text-xl font-semibold text-primary">
+            <Link
+              href="/"
+              className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity"
+            >
               mirecurso.cl
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Barra de progreso */}
-      <div className="bg-white border-b border-border">
+      {/* Barra de progreso moderna */}
+      <div className="bg-white/50 backdrop-blur-sm border-b border-border/30">
         <div className="mx-auto max-w-4xl px-4">
           <ProgressBar
             currentStep={currentStep}
@@ -56,7 +59,7 @@ export default function FormularioLayout({
       </main>
 
       {/* Footer con indicador de guardado automático */}
-      <footer className="border-t border-border bg-white">
+      <footer className="border-t border-border/50 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-4xl px-4">
           <AutoSaveIndicator />
         </div>
