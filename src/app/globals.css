@@ -49,52 +49,52 @@
 :root {
   --radius: 0.75rem;
 
-  /* Paleta Brilo - Cálida y sofisticada */
-  --background: #FFFBF7;
-  --foreground: #171818;
+  /* Paleta moderna pero accesible - WCAG AAA */
+  --background: #FAFBFC;
+  --foreground: #0F172A;
 
   --card: #FFFFFF;
-  --card-foreground: #171818;
+  --card-foreground: #0F172A;
 
   --popover: #FFFFFF;
-  --popover-foreground: #171818;
+  --popover-foreground: #0F172A;
 
-  /* Primario: Coral/Naranja cálido */
-  --primary: #F56332;
+  /* Primario: Azul vibrante pero profesional */
+  --primary: #2563EB;
   --primary-foreground: #FFFFFF;
 
-  /* Secundario: Marrón terroso */
-  --secondary: #382C15;
+  /* Secundario: Verde esmeralda */
+  --secondary: #10B981;
   --secondary-foreground: #FFFFFF;
 
-  --muted: #F5EFE7;
-  --muted-foreground: #525252;
+  --muted: #F1F5F9;
+  --muted-foreground: #334155;
 
-  /* Accent: Beige cálido */
-  --accent: #F8E5CD;
-  --accent-foreground: #382C15;
+  /* Accent: Indigo suave */
+  --accent: #EEF2FF;
+  --accent-foreground: #3730A3;
 
-  --destructive: #DC2626;
+  --destructive: #EF4444;
 
-  --border: #E8DFD4;
-  --input: #E8DFD4;
-  --ring: #F56332;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #3B82F6;
 
   /* Chart colors */
-  --chart-1: #F56332;
-  --chart-2: #DE5127;
-  --chart-3: #877A61;
-  --chart-4: #382C15;
-  --chart-5: #FD9F7F;
+  --chart-1: #2563EB;
+  --chart-2: #10B981;
+  --chart-3: #F59E0B;
+  --chart-4: #8B5CF6;
+  --chart-5: #EC4899;
 
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #171818;
-  --sidebar-primary: #F56332;
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #2563EB;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F8E5CD;
-  --sidebar-accent-foreground: #382C15;
-  --sidebar-border: #E8DFD4;
-  --sidebar-ring: #F56332;
+  --sidebar-accent: #EEF2FF;
+  --sidebar-accent-foreground: #3730A3;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #3B82F6;
 }
 
 @layer base {
@@ -163,51 +163,37 @@
     @apply space-y-6;
   }
 
-  /* Gradientes cálidos estilo Brilo */
+  /* Gradientes modernos */
   .gradient-hero {
-    background: linear-gradient(135deg, #FFFBF7 0%, #F8E5CD 50%, #FDF6ED 100%);
+    background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 50%, #C7D2FE 100%);
   }
 
   .gradient-primary {
-    background: linear-gradient(135deg, #F56332 0%, #DE5127 100%);
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
   }
 
   .gradient-success {
     background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   }
 
-  .gradient-warm {
-    background: linear-gradient(135deg, #F56332 0%, #FC4E18 100%);
-  }
-
-  .gradient-mesh {
-    background:
-      radial-gradient(at 40% 20%, rgba(245, 99, 50, 0.08) 0px, transparent 50%),
-      radial-gradient(at 80% 0%, rgba(248, 229, 205, 0.4) 0px, transparent 50%),
-      radial-gradient(at 0% 50%, rgba(253, 159, 127, 0.1) 0px, transparent 50%),
-      radial-gradient(at 80% 50%, rgba(135, 122, 97, 0.05) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(245, 99, 50, 0.05) 0px, transparent 50%);
-  }
-
-  /* Glassmorphism cálido */
+  /* Glassmorphism sutil */
   .glass {
-    background: rgba(255, 251, 247, 0.9);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(232, 223, 212, 0.5);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
-  /* Sombras cálidas */
+  /* Sombras modernas */
   .shadow-soft {
     box-shadow:
-      0 2px 8px -2px rgba(56, 44, 21, 0.04),
-      0 4px 16px -4px rgba(56, 44, 21, 0.08);
+      0 2px 8px -2px rgba(0, 0, 0, 0.05),
+      0 4px 16px -4px rgba(0, 0, 0, 0.1);
   }
 
   .shadow-glow {
     box-shadow:
-      0 0 0 1px rgba(245, 99, 50, 0.1),
-      0 4px 16px -4px rgba(245, 99, 50, 0.2);
+      0 0 0 1px rgba(37, 99, 235, 0.1),
+      0 4px 16px -4px rgba(37, 99, 235, 0.2);
   }
 
   .shadow-glow-success {
@@ -216,28 +202,22 @@
       0 4px 16px -4px rgba(16, 185, 129, 0.2);
   }
 
-  .shadow-colored {
-    box-shadow:
-      0 4px 14px -4px rgba(245, 99, 50, 0.25),
-      0 8px 24px -8px rgba(222, 81, 39, 0.15);
-  }
-
-  /* Hover lift effect mejorado */
+  /* Hover lift effect */
   .hover-lift {
-    transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 250ms ease;
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .hover-lift:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     box-shadow:
-      0 8px 20px -4px rgba(0, 0, 0, 0.1),
-      0 16px 40px -8px rgba(79, 70, 229, 0.15);
+      0 4px 12px -2px rgba(0, 0, 0, 0.08),
+      0 8px 24px -4px rgba(0, 0, 0, 0.12);
   }
 
   /* Animated gradient background */
   .animate-gradient {
     background-size: 200% 200%;
-    animation: gradient-shift 6s ease infinite;
+    animation: gradient-shift 8s ease infinite;
   }
 
   @keyframes gradient-shift {
@@ -245,86 +225,13 @@
     50% { background-position: 100% 50%; }
   }
 
-  /* Pulse cálido */
+  /* Pulse subtle for CTAs */
   .pulse-subtle {
-    animation: pulse-subtle 2.5s ease-in-out infinite;
+    animation: pulse-subtle 3s ease-in-out infinite;
   }
 
   @keyframes pulse-subtle {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 99, 50, 0.4); }
-    50% { box-shadow: 0 0 0 12px rgba(245, 99, 50, 0); }
-  }
-
-  /* Animación de entrada */
-  .animate-fade-in {
-    animation: fade-in 0.5s ease-out forwards;
-  }
-
-  @keyframes fade-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* Shimmer effect para loading */
-  .shimmer {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.5) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-
-  /* Borde con gradiente cálido */
-  .border-gradient {
-    position: relative;
-    background: white;
-    border-radius: 1rem;
-  }
-
-  .border-gradient::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: 2px;
-    border-radius: inherit;
-    background: linear-gradient(135deg, #F56332, #DE5127, #877A61);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-  }
-
-  /* Efecto de brillo en hover */
-  .shine-on-hover {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .shine-on-hover::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.3),
-      transparent
-    );
-    transition: left 0.5s ease;
-  }
-
-  .shine-on-hover:hover::after {
-    left: 100%;
+    0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
   }
 }

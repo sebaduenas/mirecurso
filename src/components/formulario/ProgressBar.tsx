@@ -13,36 +13,36 @@ export function ProgressBar({ currentStep, totalSteps, stepLabels }: ProgressBar
 
   return (
     <div className="w-full">
-      {/* Mobile: Pill design cálido */}
+      {/* Mobile: Modern pill design */}
       <div className="sm:hidden py-4">
         <div className="flex items-center justify-between mb-3">
           <span className="text-xl font-bold text-foreground">
             Paso {currentStep} de {totalSteps}
           </span>
-          <span className="text-base font-semibold text-primary bg-orange-50 px-4 py-1.5 rounded-full border border-primary/20">
+          <span className="text-base font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
             {Math.round((currentStep / totalSteps) * 100)}%
           </span>
         </div>
-        <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all duration-500 ease-out"
+            className="h-full bg-gradient-to-r from-primary to-blue-500 rounded-full transition-all duration-500 ease-out"
             style={{ width: `${(currentStep / totalSteps) * 100}%` }}
           />
         </div>
-        <p className="text-base text-muted-foreground mt-2 font-medium">
+        <p className="text-base text-muted-foreground mt-2">
           {stepLabels[currentStep - 1]}
         </p>
       </div>
 
-      {/* Desktop: Stepper cálido */}
+      {/* Desktop: Modern stepper */}
       <div className="hidden sm:block py-6 overflow-x-auto">
         <div className="flex items-start justify-between relative min-w-[640px]">
           {/* Progress line background */}
           <div className="absolute top-6 left-6 right-6 h-1 bg-muted rounded-full" />
 
-          {/* Progress line fill cálido */}
+          {/* Progress line fill */}
           <div
-            className="absolute top-6 left-6 h-1 bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all duration-500 ease-out"
+            className="absolute top-6 left-6 h-1 bg-gradient-to-r from-primary to-blue-500 rounded-full transition-all duration-500 ease-out"
             style={{ width: `calc(${progressPercentage}% * (100% - 48px) / 100)` }}
           />
 
@@ -59,9 +59,9 @@ export function ProgressBar({ currentStep, totalSteps, stepLabels }: ProgressBar
                   className={`
                     w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg
                     transition-all duration-300 ease-out shrink-0
-                    ${isCompleted ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : ''}
-                    ${isCurrent ? 'bg-primary text-white shadow-lg shadow-primary/30 ring-4 ring-primary/20 scale-110' : ''}
-                    ${isPending ? 'bg-white border-2 border-border text-muted-foreground hover:border-primary/40' : ''}
+                    ${isCompleted ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/30' : ''}
+                    ${isCurrent ? 'bg-gradient-to-br from-primary to-blue-600 text-white shadow-lg shadow-primary/30 ring-4 ring-primary/20 scale-110' : ''}
+                    ${isPending ? 'bg-white border-2 border-muted text-muted-foreground' : ''}
                   `}
                 >
                   {isCompleted ? <Check className="w-6 h-6" strokeWidth={3} /> : stepNumber}
@@ -71,7 +71,7 @@ export function ProgressBar({ currentStep, totalSteps, stepLabels }: ProgressBar
                 <span
                   className={`
                     mt-3 text-sm text-center leading-tight transition-all duration-300
-                    ${isCompleted ? 'text-emerald-600 font-semibold' : ''}
+                    ${isCompleted ? 'text-emerald-600 font-medium' : ''}
                     ${isCurrent ? 'text-primary font-bold' : ''}
                     ${isPending ? 'text-muted-foreground' : ''}
                   `}
