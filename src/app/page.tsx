@@ -22,27 +22,27 @@ export default function HomePage() {
       <Header />
 
       <main className="flex-1">
-        {/* Hero Section - Modern mesh gradient with floating elements */}
+        {/* Hero Section - Warm gradient style Brilo */}
         <section className="relative overflow-hidden gradient-hero gradient-mesh py-16 sm:py-20 lg:py-24">
-          {/* Animated decorative elements */}
+          {/* Decorative warm elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-gradient-to-br from-primary/20 to-purple-500/10 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] bg-gradient-to-tr from-secondary/15 to-teal-400/10 rounded-full blur-3xl" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-amber-500/5 to-orange-500/5 rounded-full blur-3xl" />
+            <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-gradient-to-br from-primary/10 to-orange-300/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] bg-gradient-to-tr from-accent/40 to-amber-200/20 rounded-full blur-3xl" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-orange-100/30 to-amber-100/20 rounded-full blur-3xl" />
           </div>
 
           <div className="relative mx-auto max-w-4xl px-4 text-center">
-            {/* Badge con brillo */}
-            <div className="inline-flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-5 py-2.5 mb-6 shadow-soft border border-primary/10 shine-on-hover">
-              <Sparkles className="w-5 h-5 text-amber-500" />
-              <span className="text-base font-semibold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            {/* Badge cálido */}
+            <div className="inline-flex items-center gap-2 bg-white rounded-full px-5 py-2.5 mb-6 shadow-soft border border-border shine-on-hover">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <span className="text-base font-semibold text-primary">
                 100% gratuito y sin abogado
               </span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.1] text-balance">
               Reclame la exención de{" "}
-              <span className="bg-gradient-to-r from-primary via-purple-600 to-primary bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
+              <span className="text-primary">
                 contribuciones
               </span>{" "}
               que le corresponde
@@ -53,16 +53,16 @@ export default function HomePage() {
               generamos su recurso de protección en minutos.
             </p>
 
-            {/* Features badges con iconos coloridos */}
+            {/* Features badges cálidos */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               {[
-                { icon: Shield, text: "Datos seguros", color: "text-emerald-500", bg: "bg-emerald-50" },
-                { icon: Clock, text: "Solo 5 minutos", color: "text-amber-500", bg: "bg-amber-50" },
-                { icon: FileText, text: "PDF listo", color: "text-primary", bg: "bg-indigo-50" },
+                { icon: Shield, text: "Datos seguros", color: "text-emerald-600", bg: "bg-emerald-50" },
+                { icon: Clock, text: "Solo 5 minutos", color: "text-primary", bg: "bg-orange-50" },
+                { icon: FileText, text: "PDF listo", color: "text-secondary", bg: "bg-accent" },
               ].map((item, index) => (
                 <div
                   key={index}
-                  className={`flex items-center gap-3 ${item.bg} rounded-full px-5 py-3 shadow-soft border border-white/50 hover-lift`}
+                  className={`flex items-center gap-3 ${item.bg} rounded-full px-5 py-3 shadow-soft hover-lift`}
                 >
                   <item.icon className={`w-5 h-5 ${item.color}`} />
                   <span className="text-base font-medium text-foreground">{item.text}</span>
@@ -70,7 +70,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* CTA Button mejorado */}
+            {/* CTA Button cálido */}
             <div className="mt-10">
               <Button
                 asChild
@@ -86,14 +86,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Cómo funciona - Modern cards con línea de conexión */}
+        {/* Cómo funciona - Cards con estilo Brilo */}
         <section id="como-funciona" className="py-20 bg-white scroll-mt-20 relative overflow-hidden">
-          {/* Fondo decorativo sutil */}
-          <div className="absolute inset-0 gradient-mesh opacity-30" />
-
           <div className="relative mx-auto max-w-5xl px-4">
             <div className="text-center mb-16">
-              <span className="inline-block text-base font-semibold text-primary bg-primary/10 rounded-full px-4 py-1.5 mb-4">
+              <span className="inline-block text-base font-semibold text-primary bg-orange-50 rounded-full px-4 py-1.5 mb-4">
                 Proceso simple
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
@@ -105,8 +102,8 @@ export default function HomePage() {
             </div>
 
             <div className="grid sm:grid-cols-3 gap-8 relative">
-              {/* Línea conectora (solo desktop) */}
-              <div className="hidden sm:block absolute top-[72px] left-[16.67%] right-[16.67%] h-0.5 bg-gradient-to-r from-primary via-purple-500 to-secondary" />
+              {/* Línea conectora cálida (solo desktop) */}
+              <div className="hidden sm:block absolute top-[72px] left-[16.67%] right-[16.67%] h-0.5 bg-gradient-to-r from-primary via-orange-400 to-secondary" />
 
               {[
                 {
@@ -115,8 +112,8 @@ export default function HomePage() {
                   title: "Complete el formulario",
                   description:
                     "Ingrese sus datos personales y de la propiedad. Solo lo esencial.",
-                  gradient: "from-primary to-indigo-600",
-                  bgLight: "bg-indigo-50",
+                  bg: "bg-primary",
+                  bgLight: "bg-orange-50",
                 },
                 {
                   step: 2,
@@ -124,8 +121,8 @@ export default function HomePage() {
                   title: "Revise la información",
                   description:
                     "Verifique que todo esté correcto antes de generar el documento.",
-                  gradient: "from-purple-500 to-pink-500",
-                  bgLight: "bg-purple-50",
+                  bg: "bg-orange-500",
+                  bgLight: "bg-amber-50",
                 },
                 {
                   step: 3,
@@ -133,24 +130,24 @@ export default function HomePage() {
                   title: "Descargue el PDF",
                   description:
                     "Obtenga su recurso listo para imprimir y presentar en la Corte.",
-                  gradient: "from-secondary to-emerald-500",
-                  bgLight: "bg-teal-50",
+                  bg: "bg-secondary",
+                  bgLight: "bg-accent",
                 },
               ].map((item) => (
                 <Card
                   key={item.step}
-                  className="relative overflow-hidden border border-border/50 shadow-soft hover-lift bg-white/80 backdrop-blur-sm"
+                  className="relative overflow-hidden border border-border shadow-soft hover-lift bg-white"
                 >
                   <CardContent className="pt-12 pb-8 px-6 text-center">
                     {/* Step number badge flotante */}
                     <div className="absolute -top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                      <div className={`w-16 h-16 bg-gradient-to-br ${item.gradient} rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 rotate-3 hover:rotate-0 transition-transform`}>
+                      <div className={`w-16 h-16 ${item.bg} rounded-2xl flex items-center justify-center shadow-lg rotate-3 hover:rotate-0 transition-transform`}>
                         <item.icon className="w-8 h-8 text-white" />
                       </div>
                     </div>
 
                     <div className={`inline-block ${item.bgLight} rounded-full px-4 py-1 mb-4`}>
-                      <span className="text-base font-bold bg-gradient-to-r ${item.gradient} bg-clip-text text-transparent">
+                      <span className="text-base font-bold text-foreground">
                         Paso {item.step}
                       </span>
                     </div>
@@ -204,23 +201,22 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Basado en un caso real - Highlighted card con diseño moderno */}
+        {/* Basado en un caso real - Card estilo Brilo */}
         <section className="py-20 bg-white relative overflow-hidden">
           <div className="mx-auto max-w-4xl px-4">
-            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary via-purple-600 to-indigo-700 text-white shadow-2xl shadow-primary/20">
-              {/* Decorative animated circles */}
-              <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-amber-500/10 to-orange-500/5 rounded-full blur-3xl" />
+            <Card className="relative overflow-hidden border-0 bg-secondary text-white shadow-2xl">
+              {/* Decorative warm circles */}
+              <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-500/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
 
               <CardContent className="relative py-14 px-8 sm:px-12">
                 <div className="flex flex-col sm:flex-row items-start gap-8">
-                  <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 shadow-lg border border-white/20">
+                  <div className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center flex-shrink-0 shadow-lg">
                     <Scale className="w-10 h-10 text-white" />
                   </div>
                   <div>
-                    <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-5 border border-white/20">
-                      <Sparkles className="w-4 h-4 text-amber-300" />
+                    <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 mb-5">
+                      <Sparkles className="w-4 h-4 text-orange-300" />
                       <span className="text-base font-semibold">
                         Precedente judicial
                       </span>
@@ -235,7 +231,7 @@ export default function HomePage() {
                       considerar la capacidad económica del adulto mayor es
                       ilegal y arbitrario.
                     </p>
-                    <p className="text-lg text-white/80 leading-relaxed">
+                    <p className="text-lg text-white/70 leading-relaxed">
                       Este precedente abre la puerta para miles de casos
                       similares en todo Chile.
                     </p>
@@ -319,32 +315,31 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CTA Final - Gradient moderno con partículas */}
-        <section className="relative py-24 overflow-hidden bg-gradient-to-br from-primary via-purple-600 to-indigo-700">
-          {/* Decorative animated elements */}
+        {/* CTA Final - Estilo Brilo cálido */}
+        <section className="relative py-24 overflow-hidden gradient-primary">
+          {/* Decorative warm elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.1),transparent_50%)]" />
-            <div className="absolute top-1/4 -left-20 w-80 h-80 bg-purple-500/30 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-indigo-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/5 rounded-full blur-3xl" />
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.15),transparent_50%)]" />
+            <div className="absolute top-1/4 -left-20 w-80 h-80 bg-orange-400/30 rounded-full blur-3xl" />
+            <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl" />
           </div>
 
           <div className="relative mx-auto max-w-4xl px-4 text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-5 py-2 mb-6 border border-white/20">
-              <Sparkles className="w-5 h-5 text-amber-300" />
+            <div className="inline-flex items-center gap-2 bg-white/15 rounded-full px-5 py-2 mb-6">
+              <Sparkles className="w-5 h-5 text-amber-200" />
               <span className="text-base font-semibold text-white">Comience hoy</span>
             </div>
             <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
               ¿Listo para comenzar?
             </h2>
-            <p className="text-xl text-white/80 mb-10 max-w-xl mx-auto leading-relaxed">
+            <p className="text-xl text-white/85 mb-10 max-w-xl mx-auto leading-relaxed">
               Genere su recurso de protección en pocos minutos.
               Es gratis y no necesita abogado.
             </p>
             <Button
               asChild
               size="lg"
-              className="h-16 px-12 text-xl bg-white text-primary hover:bg-white/90 shadow-2xl shadow-black/20 hover:shadow-white/20 hover:scale-[1.03] transition-all duration-300 shine-on-hover"
+              className="h-16 px-12 text-xl bg-white text-primary hover:bg-white/95 shadow-2xl hover:scale-[1.03] transition-all duration-300 shine-on-hover"
             >
               <Link href="/formulario">
                 Crear mi recurso ahora
