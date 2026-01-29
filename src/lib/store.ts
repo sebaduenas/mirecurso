@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { DatosPersonales, DatosPropiedad, DatosTributarios, FormularioCompleto } from '@/types/formulario';
 import { getCorteByRegion } from '@/data/cortes-apelaciones';
 
@@ -15,7 +15,6 @@ interface FormularioState {
 
   // Hidratación
   _hasHydrated: boolean;
-  setHasHydrated: (state: boolean) => void;
 
   // Acciones para actualizar datos
   setDatosPersonales: (datos: Partial<DatosPersonales>) => void;
@@ -33,15 +32,6 @@ interface FormularioState {
   getPorcentajeCompletado: () => number;
 }
 
-const initialState = {
-  datosPersonales: {},
-  datosPropiedad: {},
-  datosTributarios: {},
-  currentStep: 1,
-  completedSteps: [] as number[],
-  _hasHydrated: false,
-};
-
 function calcularEdad(fechaNacimiento: string): number {
   const hoy = new Date();
   const nacimiento = new Date(fechaNacimiento);
@@ -56,10 +46,13 @@ function calcularEdad(fechaNacimiento: string): number {
 export const useFormularioStore = create<FormularioState>()(
   persist(
     (set, get) => ({
-      ...initialState,
-
-      // Hidratación
-      setHasHydrated: (state) => set({ _hasHydrated: state }),
+      // Initial state
+      datosPersonales: {},
+      datosPropiedad: {},
+      datosTributarios: {},
+      currentStep: 1,
+      completedSteps: [],
+      _hasHydrated: false,
 
       // Setters de datos
       setDatosPersonales: (datos) =>
@@ -147,6 +140,17 @@ export const useFormularioStore = create<FormularioState>()(
     }),
     {
       name: 'mirecurso-formulario-v1',
+      storage: createJSONStorage(() => {
+        // Return a no-op storage on server
+        if (typeof window === 'undefined') {
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+          };
+        }
+        return localStorage;
+      }),
       partialize: (state) => ({
         datosPersonales: state.datosPersonales,
         datosPropiedad: state.datosPropiedad,
@@ -154,9 +158,20 @@ export const useFormularioStore = create<FormularioState>()(
         currentStep: state.currentStep,
         completedSteps: state.completedSteps,
       }),
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
+      onRehydrateStorage: () => () => {
+        useFormularioStore.setState({ _hasHydrated: true });
       },
     }
   )
 );
+
+// Also set hydrated on client after initial mount
+if (typeof window !== 'undefined') {
+  // Small delay to ensure store is created
+  setTimeout(() => {
+    const state = useFormularioStore.getState();
+    if (!state._hasHydrated) {
+      useFormularioStore.setState({ _hasHydrated: true });
+    }
+  }, 0);
+}

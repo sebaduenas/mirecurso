@@ -25,7 +25,9 @@ export function SessionRecoveryDialog() {
   const { resetFormulario, currentStep } = useFormularioStore();
 
   useEffect(() => {
-    // Check localStorage for existing data
+    // Check localStorage for existing data (only on client)
+    if (typeof window === 'undefined') return;
+
     const stored = localStorage.getItem('mirecurso-formulario-v1');
     if (stored) {
       try {

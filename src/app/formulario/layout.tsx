@@ -16,41 +16,31 @@ const stepLabels = [
   'Descarga',
 ];
 
-export default function FormularioLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [isClient, setIsClient] = useState(false);
-  const { currentStep, _hasHydrated } = useFormularioStore();
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  // Show loading while hydrating
-  if (!isClient || !_hasHydrated) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white">
-        <header className="sticky top-0 z-50 border-b border-border/50 bg-white/80 backdrop-blur-lg">
-          <div className="mx-auto max-w-4xl px-4 py-4">
-            <Link
-              href="/"
-              className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent"
-            >
-              mirecurso.cl
-            </Link>
-          </div>
-        </header>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-lg text-muted-foreground">Cargando formulario...</p>
-          </div>
+function LoadingState() {
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white">
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-white/80 backdrop-blur-lg">
+        <div className="mx-auto max-w-4xl px-4 py-4">
+          <Link
+            href="/"
+            className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent"
+          >
+            mirecurso.cl
+          </Link>
+        </div>
+      </header>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-lg text-muted-foreground">Cargando formulario...</p>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
+function FormularioContent({ children }: { children: React.ReactNode }) {
+  const currentStep = useFormularioStore((state) => state.currentStep);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white">
@@ -97,4 +87,24 @@ export default function FormularioLayout({
       </footer>
     </div>
   );
+}
+
+export default function FormularioLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [mounted, setMounted] = useState(false);
+  const hasHydrated = useFormularioStore((state) => state._hasHydrated);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render anything server-side or before hydration
+  if (!mounted || !hasHydrated) {
+    return <LoadingState />;
+  }
+
+  return <FormularioContent>{children}</FormularioContent>;
 }
