@@ -43,9 +43,7 @@ export function Footer() {
           {/* Credits */}
           <div className="text-center">
             <p className="text-base text-muted-foreground">
-              Desarrollado con{' '}
-              <span className="text-red-500">♥</span>
-              {' '}por{' '}
+              Desarrollado por{' '}
               <span className="font-medium text-foreground">Inteligencia Digital</span>
             </p>
             <p className="text-base text-muted-foreground mt-1">
